@@ -2,12 +2,32 @@ import Quickshell
 import Quickshell.Io
 
 ShellRoot {
+    id: root
+    property bool gameMode: false
+    property bool modeKnown: false
+
+    Process {
+        id: modeStateProcess
+        command: ["sh", "-c", "grep -qx game \"$XDG_RUNTIME_DIR/quickshell-display-mode\""]
+        running: true
+        onExited: function(exitCode) {
+            if (exitCode === 0) {
+                Qt.quit()
+                return
+            }
+            root.gameMode = false
+            root.modeKnown = true
+        }
+    }
+
     AvatarPortrait {
         id: avatar
+        visible: root.modeKnown && !root.gameMode
     }
 
     HologramBeam {
         avatar: avatar
+        visible: root.modeKnown && !root.gameMode
     }
 
     IpcHandler {

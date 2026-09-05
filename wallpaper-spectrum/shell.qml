@@ -37,6 +37,7 @@ ShellRoot {
                 peak: audio.peak, ageMs: Date.now()-audio.lastFrame,
                 running: audio.running,
                 wallpaperColorEffectEnabled: Theme.wallpaperColorEffectEnabled,
+                wallpaperHueBinCount: Theme.wallpaperHueBinCount,
                 wallpaperColorEffectAmount: audio.model.colorEffectAmount})
         }
         function measure(): void { root.timings = ({}); root.measuring = true }

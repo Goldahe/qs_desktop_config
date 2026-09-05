@@ -12,6 +12,7 @@ PanelWindow {
     property bool measuring: false
     signal presented(string name, double stamp)
     screen: outputScreen
+    visible: Theme.barsEnabled
     color: "transparent"
     WlrLayershell.layer: WlrLayer.Bottom
     WlrLayershell.namespace: "quickshell:hk47-spectrum"

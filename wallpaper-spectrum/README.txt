@@ -1,9 +1,10 @@
-Quickshell audio-reactive wallpaper bars
+Quickshell audio-reactive wallpaper and spectrum bars
 
 START
   bash /home/hawk/.config/quickshell/wallpaper-spectrum/start.sh
   Always use start.sh. It builds changed native components atomically, refuses a
-  duplicate profile, pins rendering to AMD, and prevents NVIDIA vendor probing.
+  duplicate profile, pins rendering to AMD, prevents NVIDIA vendor probing, and
+  replaces the former standalone wallpaper profile with this integrated surface.
 STOP
   quickshell kill -p /home/hawk/.config/quickshell/wallpaper-spectrum
 STATUS
@@ -12,9 +13,18 @@ RECONNECT AFTER CHANGING DEFAULT AUDIO OUTPUT
   quickshell ipc -p /home/hawk/.config/quickshell/wallpaper-spectrum call spectrum reconnect
 
 THEME
-  Edit Theme.js: heightFraction, gain, opacity, hueOffset.
+  Edit Theme.js: wallpaper source/fit settings, heightFraction, gain, opacity,
+  hueOffset, and frameRate.
   Maximum bar height defaults to half the monitor. Quickshell reloads JS changes.
   Stripe geometry is deliberately fixed by the requested 640-bin contract.
+  wallpaperColorEffectEnabled exposes the future toggle. When false, its Loader
+  destroys the native full-screen effect item and the ordinary Image/VideoOutput
+  path is used; the color effect has no hidden shader, texture upload, or redraw
+  cost. Spectrum bars remain an independent enabled feature.
+  wallpaperColorEffectIdleDelayMs defaults to 15000 and
+  wallpaperColorEffectFadeDurationMs defaults to 2000.
+  wallpaperHueBinCount defaults to 180. It affects only wallpaper recoloring;
+  the bars and analyzer retain their full 640-bin contract.
 
 AUDIO AND GEOMETRY
   capture.sh captures the exact default sink .monitor as float32 stereo at
@@ -65,6 +75,37 @@ RENDERER
   Panel surfaces are click-through, non-exclusive, on WlrLayer.Bottom, and occupy
   only the configured maximum height. They remain behind windows, bar, and avatar.
 
+WALLPAPER COLOR EFFECT
+  WallpaperSurface.qml and Native.WallpaperSpectrum replace the ordinary still
+  image draw while wallpaperColorEffectEnabled is true. The still image is
+  decoded and composited once per output, then uploaded as one static texture.
+  Each changed 640-bin spectrum frame becomes one 640x1 RGBA amplitude texture.
+  One full-screen material samples the wallpaper and one amplitude value per
+  pixel; there is no CPU recoloring, per-color loop, Canvas, screen capture, or
+  second wallpaper copy.
+
+  The fragment shader derives each source pixel's HSV hue, rotates it by
+  Theme.hueOffset, maps the complete hue cycle across wallpaper bins 0..179 and
+  then back through 179..0, and fetches that amplitude. This deliberately uses
+  the more active low-frequency region while preserving all 360 hue positions.
+  It calculates luminance and
+  mixes grayscale toward the original RGB by the configured logarithmic amplitude
+  response, x * 4 with x equal to the sampled amplitude, weighted by saturation confidence and capped at full
+  color by the final strength clamp. Both outputs use the same 180 unique
+  wallpaper bins and their mirror; the existing 640x1 amplitude texture remains
+  shared and unchanged. Amplitude texture updates are capped by the existing
+  24 Hz analyzer/renderer cadence.
+
+  The effect begins in normal-color state. Audible input activates it immediately.
+  After input remains below the audio threshold for 15 seconds, it fades from the
+  grayscale/reactive result back to the unmodified wallpaper over 2 seconds at
+  the configured frame rate, then stops requesting wallpaper updates. New audio
+  during the hold or fade restores full effect immediately.
+
+  Video wallpapers retain the existing lazy AMD VA-API VideoOutput path and
+  currently bypass hue recoloring. Disabling the exposed effect toggle preserves
+  image or video format without instantiating the still-image effect material.
+
 VERIFICATION
   python test_fft.py
   python test_render.py
@@ -78,12 +119,15 @@ VERIFICATION
     Native contract: binary parsing, process lifecycle, 640 unique bins, and
     exact width-dependent stripe coordinates pass.
     Configured frame rate: 24 Hz; direct 48 kHz input test: 24 frames/sec.
-    DP-1 presentation: 24.00 FPS; p95 53 ms; maximum 54 ms.
-    HDMI-A-1 presentation: 24.00 FPS; p95 53 ms; maximum 54 ms.
-    Native-binary active CPU: Quickshell 5.84%, analyzer 0.42%, capture 0.63%.
-    Combined native-binary CPU: 6.89% active and 1.50% silent idle.
-    Audio screenshot changed only the active lower bar area; released silence
-    returned pixel-for-pixel to the initial static wallpaper.
+    DP-1 presentation with wallpaper effect: 23.98 FPS; p95/max 55 ms.
+    HDMI-A-1 presentation with wallpaper effect: 23.98 FPS; p95/max 55 ms.
+    Active CPU: Quickshell 5.67%, analyzer 0.21%, capture 0.32%; 6.20% combined.
+    Silent normal-state CPU: 0.75% combined in this run.
+    Active audio changed the complete wallpaper through hue-dependent color and
+    retained the spectrum bars. Silence held the grayscale state for 15 seconds,
+    faded to normal over 2 seconds, then matched startup pixel-for-pixel.
+    The disabled-toggle probe reported enabled=false/amount=0 and rendered the
+    ordinary full-color wallpaper with no native effect item instantiated.
   After unchanged-frame suppression and adaptive scheduling, the live benchmark
   measured 3.00% combined CPU while silent and 7.40% combined while active.
   Active usage is 13.2% lower than the prior 8.53% baseline; the idle renderer
@@ -96,6 +140,15 @@ VERIFICATION
   measurable gradient penalty, but ordinary run-to-run variance means they are
   not attributed to the gradient as an optimization. Presentation was 24.02 FPS
   on both monitors with zero rejected frames.
+  The wallpaper-only 180-bin mirrored hue mapping passed the native mapping,
+  analyzer, process-lifecycle, visual, and isolated active/silent checks. Two
+  180-bin runs presented at 24.01 and 24.02 FPS on both monitors with p95/max
+  54/55 ms, zero rejected frames, and 1.50%/1.00% silent CPU. Active combined
+  CPU samples were 10.98% and 11.11%; a temporary 640-bin A/B control presented
+  identically at 24.01 FPS and sampled 8.65% active/1.25% idle. The shader and
+  CPU-side execution paths are unchanged apart from the bin-count value, so the
+  CPU difference is recorded as environment/run variance rather than attributed
+  to the hue mapping. The requested 180-bin setting was restored afterward.
   Qt frameSwapped timing measures submitted/presented Qt frames, not a hardware
   scanout guarantee. Evidence is in verification/results.json and PNG files.
 
@@ -105,6 +158,9 @@ GPU RESTRICTION
   Verify with /proc/<pid>/fd after renderer changes; intent variables are not proof.
 
 BACKUP
+  Before wallpaper-only 180-bin hue mapping:
+    backups/wallpaper-hue-180-bins-20260905-203000/
+  Verified integrated color effect: backups/color-wallpaper-effect-20260905-194915/
   Before native binary transport: backups/before-native-binary-20260905-160036/
   Pre-640 profile: backups/640-bins-20260905-031146/
   Earlier complete profiles: ../wallpaper-backup-20260905-023018/

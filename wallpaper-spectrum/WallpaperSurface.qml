@@ -77,6 +77,7 @@ PanelWindow {
             dimOpacity: Theme.dimOpacity
             dimColor: Theme.dimColor
             hueOffset: Theme.hueOffset
+            hueBinCount: Theme.wallpaperHueBinCount
         }
     }
 

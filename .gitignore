@@ -1,0 +1,11 @@
+# Local/editor and Python cache
+**/__pycache__/
+*.pyc
+
+# Disposable backups and generated evidence
+*.bak*
+**/backups/
+wallpaper-backup-*/
+**/verification/
+*.log
+*.png

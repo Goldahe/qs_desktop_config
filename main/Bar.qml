@@ -16,6 +16,10 @@ PanelWindow {
     }
 
     property int taskbarHeight: 38
+    property bool gameMode: false
+    property bool modeTransitioning: false
+    property bool pendingGameMode: false
+    readonly property string modeSwitchPath: Qt.resolvedUrl("mode-switch.sh").toString().replace("file://", "")
 
     implicitHeight: taskbarHeight
     color: "#e6171717"
@@ -41,6 +45,27 @@ PanelWindow {
     property var hardwareMenu: hardwarePopup
     property var chatterboxMenu: chatterboxPopup
     property var vfioMenu: vfioPopup
+
+    Process {
+        id: modeStateProcess
+        command: ["sh", "-c", "grep -qx game \"$XDG_RUNTIME_DIR/quickshell-display-mode\""]
+        running: true
+        onExited: function(exitCode) {
+            if (!bar.modeTransitioning)
+                bar.gameMode = exitCode === 0
+        }
+    }
+
+    Process {
+        id: modeSwitchProcess
+        command: ["bash", bar.modeSwitchPath, "work"]
+        running: false
+        onExited: function(exitCode) {
+            bar.modeTransitioning = false
+            if (exitCode !== 0)
+                bar.gameMode = !bar.pendingGameMode
+        }
+    }
 
     IpcHandler {
         target: "vfio"
@@ -90,6 +115,23 @@ PanelWindow {
                chatterboxControl.width / 2 - chatterboxPopup.width / 2
     }
 
+    function setGameMode(value) {
+        if (modeTransitioning || gameMode === value)
+            return
+        pendingGameMode = value
+        gameMode = value
+        modeTransitioning = true
+        modeSwitchProcess.command = ["bash", modeSwitchPath, value ? "game" : "work"]
+        modeSwitchProcess.running = true
+    }
+
+    IpcHandler {
+        target: "displayMode"
+        function toggle(): void { bar.setGameMode(!bar.gameMode) }
+        function game(): void { bar.setGameMode(true) }
+        function work(): void { bar.setGameMode(false) }
+    }
+
     Workspaces {}
 
     Row {
@@ -98,6 +140,9 @@ PanelWindow {
         anchors.verticalCenter: parent.verticalCenter
         spacing: 4
 
+        ModeToggle {
+            barWindow: bar
+        }
         HardwareButton {
             barWindow: bar
         }
@@ -110,6 +155,14 @@ PanelWindow {
     StatusControls {
         barWindow: bar
         clock: clock
+    }
+
+    Variants {
+        model: Quickshell.screens
+        ThemeControl {
+            required property var modelData
+            outputScreen: modelData
+        }
     }
     PowerPopup {
         id: powerPopup

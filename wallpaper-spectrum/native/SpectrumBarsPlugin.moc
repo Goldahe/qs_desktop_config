@@ -315,6 +315,7 @@ template <> constexpr inline auto WallpaperSpectrum::qt_create_metaobjectdata<qt
         "dimOpacity",
         "dimColor",
         "hueOffset",
+        "hueBinCount",
         "ready"
     };
 
@@ -349,8 +350,10 @@ template <> constexpr inline auto WallpaperSpectrum::qt_create_metaobjectdata<qt
         QtMocHelpers::PropertyData<QColor>(18, 0x80000000 | 16, QMC::DefaultPropertyFlags | QMC::Writable | QMC::EnumOrFlag | QMC::StdCppSet, 2),
         // property 'hueOffset'
         QtMocHelpers::PropertyData<qreal>(19, QMetaType::QReal, QMC::DefaultPropertyFlags | QMC::Writable | QMC::StdCppSet, 2),
+        // property 'hueBinCount'
+        QtMocHelpers::PropertyData<int>(20, QMetaType::Int, QMC::DefaultPropertyFlags | QMC::Writable | QMC::StdCppSet, 2),
         // property 'ready'
-        QtMocHelpers::PropertyData<bool>(20, QMetaType::Bool, QMC::DefaultPropertyFlags, 1),
+        QtMocHelpers::PropertyData<bool>(21, QMetaType::Bool, QMC::DefaultPropertyFlags, 1),
     };
     QtMocHelpers::UintData qt_enums {
     };
@@ -407,7 +410,8 @@ void WallpaperSpectrum::qt_static_metacall(QObject *_o, QMetaObject::Call _c, in
         case 6: *reinterpret_cast<qreal*>(_v) = _t->dimOpacity(); break;
         case 7: *reinterpret_cast<QColor*>(_v) = _t->dimColor(); break;
         case 8: *reinterpret_cast<qreal*>(_v) = _t->hueOffset(); break;
-        case 9: *reinterpret_cast<bool*>(_v) = _t->ready(); break;
+        case 9: *reinterpret_cast<int*>(_v) = _t->hueBinCount(); break;
+        case 10: *reinterpret_cast<bool*>(_v) = _t->ready(); break;
         default: break;
         }
     }
@@ -423,6 +427,7 @@ void WallpaperSpectrum::qt_static_metacall(QObject *_o, QMetaObject::Call _c, in
         case 6: _t->setDimOpacity(*reinterpret_cast<qreal*>(_v)); break;
         case 7: _t->setDimColor(*reinterpret_cast<QColor*>(_v)); break;
         case 8: _t->setHueOffset(*reinterpret_cast<qreal*>(_v)); break;
+        case 9: _t->setHueBinCount(*reinterpret_cast<int*>(_v)); break;
         default: break;
         }
     }
@@ -460,7 +465,7 @@ int WallpaperSpectrum::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
             || _c == QMetaObject::ResetProperty || _c == QMetaObject::BindableProperty
             || _c == QMetaObject::RegisterPropertyMetaType) {
         qt_static_metacall(this, _c, _id, _a);
-        _id -= 10;
+        _id -= 11;
     }
     return _id;
 }

@@ -29,6 +29,7 @@ Item {
         width: 2560; height: 1440
         model: model
         hueOffset: 0
+        hueBinCount: 180
     }
 }
 ''')
@@ -125,8 +126,9 @@ assert [bars.binForStripe(i, 1920) for i in (0, 1, 478, 479, 480, 481, 958, 959)
 assert [bars.physicalXForStripe(i, 2560) for i in (0, 1, 639, 640, 1279)] == [0, 2, 1278, 1280, 2558]
 assert [bars.physicalXForStripe(i, 1920) for i in (0, 1, 479, 480, 959)] == [0, 2, 958, 960, 1918]
 assert bars.binForStripe(-1, 2560) == -1 and bars.binForStripe(1280, 2560) == -1
-assert [wallpaper_effect.binForHue(h, 2560) for h in (0.0, 0.25, 0.5, 0.75, 1.0)] == [0, 320, 639, 320, 0]
-assert [wallpaper_effect.binForHue(h, 1920) for h in (0.0, 0.5, 1.0)] == [0, 479, 0]
+assert wallpaper_effect.property("hueBinCount") == 180
+assert [wallpaper_effect.binForHue(h, 2560) for h in (0.0, 0.25, 0.5, 0.75, 1.0)] == [0, 90, 179, 90, 0]
+assert [wallpaper_effect.binForHue(h, 1920) for h in (0.0, 0.5, 1.0)] == [0, 179, 0]
 assert wallpaper_effect.property("ready") is False
 assert wallpaper_effect.setProperty("source", QUrl.fromLocalFile(
     "/home/hawk/Downloads/frieren-beyond-journeys-end-5k-x6-2560x1440.jpg"))
@@ -136,6 +138,7 @@ assert "Process {" not in reader and "SplitParser" not in reader
 theme = (base / "Theme.js").read_text()
 surface = (base / "WallpaperSurface.qml").read_text()
 assert "wallpaperColorEffectEnabled = true" in theme
+assert "wallpaperHueBinCount = 180" in theme
 assert "active: surface.colorEffectActive" in surface
 assert "visible: !surface.colorEffectActive" in surface
 assert "Theme.wallpaperColorEffectEnabled && !isVideo" in surface

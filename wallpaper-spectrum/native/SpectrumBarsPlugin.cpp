@@ -383,6 +383,7 @@ class WallpaperSpectrum : public QQuickItem {
     Q_PROPERTY(qreal dimOpacity READ dimOpacity WRITE setDimOpacity NOTIFY appearanceChanged)
     Q_PROPERTY(QColor dimColor READ dimColor WRITE setDimColor NOTIFY appearanceChanged)
     Q_PROPERTY(qreal hueOffset READ hueOffset WRITE setHueOffset NOTIFY appearanceChanged)
+    Q_PROPERTY(int hueBinCount READ hueBinCount WRITE setHueBinCount NOTIFY appearanceChanged)
     Q_PROPERTY(bool ready READ ready NOTIFY sourceChanged)
 
 public:
@@ -397,10 +398,11 @@ public:
     qreal dimOpacity() const { return m_dimOpacity; }
     QColor dimColor() const { return m_dimColor; }
     qreal hueOffset() const { return m_hueOffset; }
+    int hueBinCount() const { return m_hueBinCount; }
     bool ready() const { return !m_sourceImage.isNull(); }
 
     Q_INVOKABLE int binForHue(qreal hue, int physicalWidth) const {
-        const int bins = std::clamp(physicalWidth / 4, 1, 640);
+        const int bins = std::clamp(std::min(m_hueBinCount, physicalWidth / 4), 1, 640);
         hue = std::fmod(hue - m_hueOffset, 1.0);
         if (hue < 0) hue += 1;
         const qreal phase = hue * 2;
@@ -468,6 +470,11 @@ public:
     void setHueOffset(qreal value) {
         if (qFuzzyCompare(m_hueOffset, value)) return;
         m_hueOffset = value; update(); emit appearanceChanged();
+    }
+    void setHueBinCount(int value) {
+        value = std::clamp(value, 1, 640);
+        if (m_hueBinCount == value) return;
+        m_hueBinCount = value; update(); emit appearanceChanged();
     }
 
 signals:
@@ -542,7 +549,8 @@ protected:
             m_spectrumDirty = false;
         }
         material->effectAmount = m_model ? float(m_model->colorEffectAmount()) : 0;
-        material->binCount = float(std::clamp(physicalSize.width() / 4, 1, 640));
+        material->binCount = float(std::clamp(
+            std::min(m_hueBinCount, physicalSize.width() / 4), 1, 640));
         material->hueOffset = float(m_hueOffset);
         node->markDirty(QSGNode::DirtyGeometry | QSGNode::DirtyMaterial);
         return node;
@@ -586,6 +594,7 @@ private:
     qreal m_dimOpacity = 0;
     QColor m_dimColor = Qt::black;
     qreal m_hueOffset = 0;
+    int m_hueBinCount = 180;
     bool m_imageDirty = true;
     bool m_spectrumDirty = true;
     QSize m_textureSize;
