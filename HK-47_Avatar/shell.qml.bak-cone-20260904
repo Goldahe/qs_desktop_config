@@ -1,0 +1,51 @@
+import Quickshell
+import Quickshell.Io
+
+ShellRoot {
+    AvatarPortrait {
+        id: avatar
+    }
+
+    IpcHandler {
+        target: "hk47Avatar"
+
+        function isActive(): bool {
+            return avatar.active
+        }
+
+        function turnOn(): void {
+            avatar.turnOn()
+        }
+
+        function turnOff(): void {
+            avatar.turnOff()
+        }
+
+        function toggle(): void {
+            if (avatar.active)
+                avatar.turnOff()
+            else
+                avatar.turnOn()
+        }
+
+        function setColor(color: string): void {
+            avatar.shineColor = color
+        }
+
+        function setAmplitudeEnvelope(envelope: string): void {
+            avatar.setAmplitudeEnvelope(envelope)
+        }
+
+        function setAmplitude(amplitude: real): void {
+            avatar.setAmplitude(amplitude)
+        }
+
+        function getAmplitude(): real {
+            return avatar.audioAmplitude
+        }
+
+        function getShineStrength(): real {
+            return avatar.effectiveShineStrength
+        }
+    }
+}

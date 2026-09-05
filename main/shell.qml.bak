@@ -1,0 +1,29 @@
+import QtQuick
+import Quickshell
+
+ShellRoot { 
+	PanelWindow {
+		anchors {
+			bottom: true
+			left: true
+			right: true
+		}
+
+		implicitHeight: 36
+		color: "black"
+
+		SystemClock {
+			id: clock
+			precision: SystemClock.Minutes
+		}
+
+		Text {
+            		anchors.centerIn: parent
+
+            		text: Qt.formatDateTime(clock.date, "HH:mm")
+            		color: "white"
+
+            		font.pixelSize: 16
+        	}
+	}
+}

@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/hkspectrum">
+    <file alias="wallpaper.vert.qsb">shaders/wallpaper.vert.qsb</file>
+    <file alias="wallpaper.frag.qsb">shaders/wallpaper.frag.qsb</file>
+  </qresource>
+</RCC>

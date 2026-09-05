@@ -1,0 +1,104 @@
+import QtQuick
+
+Canvas {
+    id: graph
+
+    property var values: []
+    property bool active: false
+    property real maximum: 100
+    property string unit: "%"
+    property color strokeColor: "#8fb8ff"
+    property color fillColor: "#338fb8ff"
+    property color axisColor: "#777777"
+    property color labelColor: "#aaaaaa"
+
+    implicitWidth: 330
+    implicitHeight: 108
+    height: 108
+    antialiasing: true
+    visible: active
+
+    onValuesChanged: requestPaint()
+    onWidthChanged: requestPaint()
+    onHeightChanged: requestPaint()
+    onVisibleChanged: if (visible) requestPaint()
+
+    onPaint: {
+        const ctx = getContext("2d")
+        ctx.clearRect(0, 0, width, height)
+        ctx.fillStyle = "#24101010"
+        ctx.fillRect(0, 0, width, height)
+
+        const left = 38
+        const right = 8
+        const top = 8
+        const bottom = 24
+        const plotWidth = Math.max(1, width - left - right)
+        const plotHeight = Math.max(1, height - top - bottom)
+        const maxValue = maximum > 0 ? maximum : 100
+
+        ctx.font = "10px sans-serif"
+        ctx.fillStyle = labelColor
+        ctx.textAlign = "right"
+        ctx.textBaseline = "middle"
+        ctx.fillText(maxValue.toFixed(0) + unit, left - 5, top)
+        ctx.fillText((maxValue / 2).toFixed(0) + unit, left - 5, top + plotHeight / 2)
+        ctx.fillText("0" + unit, left - 5, top + plotHeight)
+
+        ctx.strokeStyle = axisColor
+        ctx.lineWidth = 1
+        ctx.beginPath()
+        ctx.moveTo(left, top)
+        ctx.lineTo(left, top + plotHeight)
+        ctx.lineTo(left + plotWidth, top + plotHeight)
+        ctx.stroke()
+
+        ctx.strokeStyle = "#383838"
+        ctx.beginPath()
+        ctx.moveTo(left, top + plotHeight / 2)
+        ctx.lineTo(left + plotWidth, top + plotHeight / 2)
+        ctx.stroke()
+
+        ctx.fillStyle = labelColor
+        ctx.textAlign = "left"
+        ctx.textBaseline = "top"
+        ctx.fillText("2m", left, top + plotHeight + 5)
+        ctx.textAlign = "right"
+        ctx.fillText("now", left + plotWidth, top + plotHeight + 5)
+        ctx.textAlign = "center"
+        ctx.fillText("time", left + plotWidth / 2, height - 10)
+
+        if (!values || values.length === 0)
+            return
+
+        const points = []
+        for (let i = 0; i < values.length; ++i) {
+            const value = Number(values[i])
+            if (!isFinite(value))
+                continue
+            const x = values.length === 1 ? left + plotWidth / 2 : left + i * plotWidth / (values.length - 1)
+            const y = top + plotHeight - Math.max(0, Math.min(1, value / maxValue)) * plotHeight
+            points.push([x, y])
+        }
+        if (points.length === 0)
+            return
+
+        ctx.beginPath()
+        ctx.moveTo(points[0][0], top + plotHeight)
+        ctx.lineTo(points[0][0], points[0][1])
+        for (const point of points)
+            ctx.lineTo(point[0], point[1])
+        ctx.lineTo(points[points.length - 1][0], top + plotHeight)
+        ctx.closePath()
+        ctx.fillStyle = fillColor
+        ctx.fill()
+
+        ctx.beginPath()
+        ctx.moveTo(points[0][0], points[0][1])
+        for (const point of points)
+            ctx.lineTo(point[0], point[1])
+        ctx.strokeStyle = strokeColor
+        ctx.lineWidth = 2
+        ctx.stroke()
+    }
+}

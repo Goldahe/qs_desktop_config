@@ -1,0 +1,108 @@
+import QtQuick
+import Quickshell
+import Quickshell.Hyprland
+import Quickshell.Services.Pipewire
+
+import Quickshell.Bluetooth
+
+PanelWindow {
+    id: bar
+
+    anchors {
+        bottom: true
+        left: true
+        right: true
+    }
+
+    property int taskbarHeight: 38
+
+    implicitHeight: taskbarHeight
+    color: "#e6171717"
+    exclusiveZone: implicitHeight
+
+    SystemClock {
+        id: clock
+        precision: SystemClock.Minutes
+    }
+
+
+    property var connectedBluetooth: {
+        for (const device of Bluetooth.devices.values) {
+            if (device.connected)
+                return device
+        }
+        return null
+    }
+
+    // Explicit component interfaces for popup controls.
+    property var powerMenu: powerPopup
+    property var calendarMenu: calendarPopup
+    property var hardwareMenu: hardwarePopup
+    property var chatterboxMenu: chatterboxPopup
+
+
+    function bluetoothText() {
+        if (!Bluetooth.defaultAdapter || !Bluetooth.defaultAdapter.enabled)
+            return "󰂲"
+        if (connectedBluetooth)
+            return "󰂱  " + (connectedBluetooth.name || connectedBluetooth.deviceName)
+        return "󰂯"
+    }
+
+    function powerAction(command) {
+        Quickshell.execDetached(["sh", "-c", command])
+        powerPopup.visible = false
+    }
+
+    function openCalendar() {
+        calendarPopup.year = clock.date.getFullYear()
+        calendarPopup.month = clock.date.getMonth()
+        powerPopup.visible = false
+        calendarPopup.visible = !calendarPopup.visible
+    }
+
+    function chatterboxPopupX() {
+        return centerControls.x + chatterboxControl.x +
+               chatterboxControl.width / 2 - chatterboxPopup.width / 2
+    }
+
+    Workspaces {}
+
+    Row {
+        id: centerControls
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 4
+
+        HardwareButton {
+            barWindow: bar
+        }
+        ChatterboxButton {
+            id: chatterboxControl
+            barWindow: bar
+        }
+    }
+
+    StatusControls {
+        barWindow: bar
+        clock: clock
+    }
+    PowerPopup {
+        id: powerPopup
+        barWindow: bar
+    }
+
+    CalendarPopup {
+        id: calendarPopup
+        barWindow: bar
+        clock: clock
+    }
+    HardwarePopup {
+        id: hardwarePopup
+        barWindow: bar
+    }
+    ChatterboxPopup {
+        id: chatterboxPopup
+        barWindow: bar
+    }
+}

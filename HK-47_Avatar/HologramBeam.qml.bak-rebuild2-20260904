@@ -1,0 +1,69 @@
+import QtQuick
+import Quickshell
+import Quickshell.Wayland
+
+// Smooth, click-through holographic projection from the taskbar to the avatar.
+PanelWindow {
+    id: beam
+
+    required property var avatar
+    readonly property int taskbarHeight: 38
+    readonly property int avatarSize: 256
+    readonly property real screenWidth: screen ? screen.width : 2560
+    readonly property real screenHeight: screen ? screen.height : 1440
+    readonly property real avatarCenterY: screenHeight * 0.75
+    // Start three pixels above the taskbar's top edge.
+    readonly property real emitterY: screenHeight - taskbarHeight - 3
+    // The projection terminates at the avatar's visual midpoint.
+    readonly property real targetY: avatarCenterY
+    readonly property real sourceHalf: 11
+    readonly property real targetHalf: avatarSize / 2
+
+    visible: avatar.active || avatar.activationLevel > 0.001
+    color: "transparent"
+
+    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.namespace: "quickshell:hk47-avatar-beam"
+    focusable: false
+    exclusionMode: ExclusionMode.Ignore
+    exclusiveZone: 0
+    mask: Region {}
+
+    anchors {
+        left: true
+        right: true
+        top: true
+        bottom: true
+    }
+
+    Image {
+        id: crtImage
+        visible: false
+        width: 256
+        height: 256
+        source: "file:///games/Windows/VM-Share/ClipStudio_Project/HK-47_CRT_effect.png"
+        sourceSize.width: 256
+        sourceSize.height: 256
+        smooth: false
+        mipmap: false
+        cache: true
+        asynchronous: true
+    }
+
+    ShaderEffect {
+        anchors.fill: parent
+        opacity: Math.max(0.0, Math.min(1.0, beam.avatar.activationLevel))
+        fragmentShader: Qt.resolvedUrl("shaders/hologram-beam.frag.qsb")
+
+        property var crtTexture: crtImage
+        property real screenHeight: beam.screenHeight
+        property real sourceY: beam.emitterY
+        property real targetY: beam.targetY
+        property real sourceHalf: beam.sourceHalf
+        property real targetHalf: beam.targetHalf
+        property real audioAmplitude: beam.avatar.visualAmplitude
+        property real scanPhase: beam.avatar.scanPhase
+        property real refreshPhase: beam.avatar.refreshPhase
+        property color beamColor: beam.avatar.renderedShineColor
+    }
+}

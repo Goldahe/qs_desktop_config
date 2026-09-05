@@ -1,0 +1,54 @@
+#version 440
+
+layout(location = 0) in vec2 qt_TexCoord0;
+layout(location = 0) out vec4 fragColor;
+
+layout(std140, binding = 0) uniform buf {
+    mat4 qt_Matrix;
+    float qt_Opacity;
+    float screenHeight;
+    float sourceY;
+    float targetY;
+    float sourceHalf;
+    float targetHalf;
+    float audioAmplitude;
+    float scanPhase;
+    float refreshPhase;
+    vec4 beamColor;
+} ubuf;
+
+layout(binding = 1) uniform sampler2D crtTexture;
+
+void main()
+{
+    vec2 uv = qt_TexCoord0;
+    float y = uv.y * ubuf.screenHeight;
+    float distanceToTarget = max(1.0, ubuf.sourceY - ubuf.targetY);
+    float inBeam = smoothstep(ubuf.targetY - 2.0, ubuf.targetY + 2.0, y)
+                 * (1.0 - smoothstep(ubuf.sourceY - 3.0, ubuf.sourceY + 2.0, y));
+
+    float t = clamp((ubuf.sourceY - y) / distanceToTarget, 0.0, 1.0);
+    float outerHalf = mix(ubuf.sourceHalf, ubuf.targetHalf, t);
+    float innerHalf = outerHalf * 0.5;
+    float x = abs(uv.x - 0.5) * ubuf.screenHeight;
+
+    // Smooth cone masks avoid the staircase edges produced by geometry strips.
+    float outerMask = 1.0 - smoothstep(outerHalf - 7.0, outerHalf + 2.0, x);
+    float innerMask = 1.0 - smoothstep(innerHalf - 5.0, innerHalf + 2.0, x);
+    float outerEdge = outerMask * (1.0 - innerMask);
+    float innerEdge = innerMask * (1.0 - smoothstep(innerHalf - 7.0, innerHalf + 1.0, x));
+
+    // Reuse the avatar CRT texture for moving scanline flicker.
+    vec4 crt = texture(crtTexture, vec2(uv.x, fract(uv.y * 1.5 - ubuf.scanPhase)));
+    float crtLuma = dot(crt.rgb, vec3(0.2126, 0.7152, 0.0722));
+    float flicker = mix(0.62, 1.18, smoothstep(0.18, 0.92, crtLuma) * crt.a);
+    float refresh = 0.82 + 0.18 * smoothstep(0.0, 1.0,
+        1.0 - abs(uv.y - ubuf.refreshPhase) / 0.18);
+    float soundPulse = 0.72 + clamp(ubuf.audioAmplitude, 0.0, 1.0) * 0.72;
+
+    float alpha = (outerEdge * 0.26 + innerEdge * 0.34
+                 + innerMask * 0.055 + outerMask * 0.025)
+                * flicker * refresh * soundPulse * inBeam;
+    vec3 color = ubuf.beamColor.rgb * (0.72 + flicker * 0.28);
+    fragColor = vec4(color * alpha, alpha) * ubuf.qt_Opacity;
+}

@@ -1,0 +1,5 @@
+  INFO: Launching config: "/home/hawk/.config/quickshell/wallpaper-spectrum/shell.qml"
+  INFO: Shell ID: "886614c1ae3262a939bdeafd549ee6bf" Path ID "886614c1ae3262a939bdeafd549ee6bf"
+  INFO: Saving logs to "/run/user/1000/quickshell/by-id/mpe2kyewkt/log.qslog"
+  INFO: Configuration Loaded
+  WARN: Audio capture: capture.sh: capturing hk47_spectrum_test.monitor at 48000 Hz stereo, latency 16 ms

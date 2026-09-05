@@ -1,0 +1,129 @@
+#version 440
+layout(location=0) in vec2 qt_TexCoord0;
+layout(location=0) out vec4 fragColor;
+layout(std140,binding=0) uniform buf {
+    mat4 qt_Matrix;
+    float qt_Opacity;
+    float s0;
+    float s1;
+    float s2;
+    float s3;
+    float s4;
+    float s5;
+    float s6;
+    float s7;
+    float s8;
+    float s9;
+    float s10;
+    float s11;
+    float s12;
+    float s13;
+    float s14;
+    float s15;
+    float s16;
+    float s17;
+    float s18;
+    float s19;
+    float s20;
+    float s21;
+    float s22;
+    float s23;
+    float s24;
+    float s25;
+    float s26;
+    float s27;
+    float s28;
+    float s29;
+    float s30;
+    float s31;
+    float s32;
+    float s33;
+    float s34;
+    float s35;
+    float s36;
+    float s37;
+    float s38;
+    float s39;
+    float s40;
+    float s41;
+    float s42;
+    float s43;
+    float screenWidth;
+    float screenHeight;
+    float gain;
+    float barWidth;
+    float gapWidth;
+    float effectOpacity;
+    float hueOffset;
+} u;
+float sampleBin(int i) {
+    if (i == 0) return u.s0;
+    if (i == 1) return u.s1;
+    if (i == 2) return u.s2;
+    if (i == 3) return u.s3;
+    if (i == 4) return u.s4;
+    if (i == 5) return u.s5;
+    if (i == 6) return u.s6;
+    if (i == 7) return u.s7;
+    if (i == 8) return u.s8;
+    if (i == 9) return u.s9;
+    if (i == 10) return u.s10;
+    if (i == 11) return u.s11;
+    if (i == 12) return u.s12;
+    if (i == 13) return u.s13;
+    if (i == 14) return u.s14;
+    if (i == 15) return u.s15;
+    if (i == 16) return u.s16;
+    if (i == 17) return u.s17;
+    if (i == 18) return u.s18;
+    if (i == 19) return u.s19;
+    if (i == 20) return u.s20;
+    if (i == 21) return u.s21;
+    if (i == 22) return u.s22;
+    if (i == 23) return u.s23;
+    if (i == 24) return u.s24;
+    if (i == 25) return u.s25;
+    if (i == 26) return u.s26;
+    if (i == 27) return u.s27;
+    if (i == 28) return u.s28;
+    if (i == 29) return u.s29;
+    if (i == 30) return u.s30;
+    if (i == 31) return u.s31;
+    if (i == 32) return u.s32;
+    if (i == 33) return u.s33;
+    if (i == 34) return u.s34;
+    if (i == 35) return u.s35;
+    if (i == 36) return u.s36;
+    if (i == 37) return u.s37;
+    if (i == 38) return u.s38;
+    if (i == 39) return u.s39;
+    if (i == 40) return u.s40;
+    if (i == 41) return u.s41;
+    if (i == 42) return u.s42;
+    if (i == 43) return u.s43;
+    return 0.0;
+}
+void main() {
+    vec2 uv = qt_TexCoord0;
+    float x = floor(uv.x * u.screenWidth);
+    if (mod(x, u.barWidth + u.gapWidth) >= u.barWidth) {
+        fragColor = vec4(0.0); return;
+    }
+    // Bass at the center, higher frequencies toward the outer edges.
+    float position = abs(uv.x * 2.0 - 1.0) * 43.0;
+    int index = int(floor(position));
+    float baseStrength = sampleBin(index);
+    float interpolated = mix(baseStrength, sampleBin(min(index+1,43)), fract(position));
+    // Retain only 25% of the old neighboring-bin interpolation so the
+    // spectrum silhouette has deliberate horizontal steps.
+    float strength = clamp(mix(baseStrength, interpolated, 0.25) * u.gain, 0.0, 1.0);
+    float heightPx = strength * u.screenHeight;
+    float y = (1.0 - uv.y) * u.screenHeight;
+    // Both ends bounded. Zero audio is genuinely transparent.
+    // Quarter-pixel transition: 75% less top-edge anti-aliasing.
+    float coverage = clamp((heightPx - y) * 4.0 + 0.5, 0.0, 1.0) * step(0.001, strength);
+    float alpha = coverage * u.effectOpacity;
+    vec3 rgb = clamp(abs(mod((uv.x + u.hueOffset) * 6.0 + vec3(0,4,2),6.0)-3.0)-1.0,0.0,1.0);
+    rgb = mix(vec3(1.0),rgb,0.82);
+    fragColor = vec4(rgb * alpha, alpha) * u.qt_Opacity;
+}

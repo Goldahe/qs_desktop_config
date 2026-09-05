@@ -1,0 +1,86 @@
+#version 440
+
+layout(location = 0) in vec2 qt_TexCoord0;
+layout(location = 0) out vec4 fragColor;
+
+layout(std140, binding = 0) uniform buf {
+    mat4 qt_Matrix;
+    float qt_Opacity;
+    float screenWidth;
+    float screenHeight;
+    float sourceY;
+    float targetY;
+    float sourceRadius;
+    float outerTargetHalf;
+    float innerTargetHalf;
+    float audioAmplitude;
+    float scanPhase;
+    vec4 beamColor;
+} ubuf;
+
+layout(binding = 1) uniform sampler2D crtTexture;
+
+float exponentialCurve(float value)
+{
+    float x = clamp(value, 0.0, 1.0);
+    const float steepness = 4.0;
+    return (exp(steepness * x) - 1.0) / (exp(steepness) - 1.0);
+}
+
+void main()
+{
+    vec2 uv = qt_TexCoord0;
+    float pixelY = uv.y * ubuf.screenHeight;
+    float pixelXFromCenter = abs(uv.x - 0.5) * ubuf.screenWidth;
+    float beamLength = max(1.0, ubuf.sourceY - ubuf.targetY);
+
+    // 0 at the shared taskbar source dot, 1 at the avatar endpoint.
+    float travel = clamp((ubuf.sourceY - pixelY) / beamLength, 0.0, 1.0);
+    float verticalMask = smoothstep(ubuf.targetY - 1.5, ubuf.targetY + 1.5, pixelY)
+                       * (1.0 - smoothstep(ubuf.sourceY - 1.5,
+                                           ubuf.sourceY + 1.5, pixelY));
+
+    // Both cones originate at precisely the same source radius.
+    float speech = clamp(ubuf.audioAmplitude, 0.0, 1.0);
+    float outerHalf = mix(ubuf.sourceRadius, ubuf.outerTargetHalf, travel);
+    float innerHalf = mix(ubuf.sourceRadius, ubuf.innerTargetHalf, travel);
+
+    // Feathered masks create genuinely smooth diagonal edges.
+    float outerMask = 1.0 - smoothstep(outerHalf - 2.5, outerHalf + 1.5,
+                                      pixelXFromCenter);
+    float innerMask = 1.0 - smoothstep(innerHalf - 2.5, innerHalf + 1.5,
+                                      pixelXFromCenter);
+
+    // Each complete cone spans left edge -> transparent center -> right edge.
+    // The larger cone reaches 256 px at the avatar endpoint; the smaller
+    // independently reaches 128 px. Both use the same exponential profile.
+    float outerAcross = clamp(pixelXFromCenter / max(outerHalf, 1.0), 0.0, 1.0);
+    float innerAcross = clamp(pixelXFromCenter / max(innerHalf, 1.0), 0.0, 1.0);
+    float outerHorizontal = 0.50 * outerMask * exponentialCurve(outerAcross);
+    float innerHorizontal = 0.50 * innerMask * exponentialCurve(innerAcross);
+
+    // Vertical opacity remains exponential, rising from 0% at the avatar
+    // endpoint to 50% at the shared taskbar source.
+    float verticalOpacity = 0.50 * exponentialCurve(1.0 - travel);
+
+    // Apply the vertical gradient to each cone independently, then overlap
+    // them with normal premultiplied-alpha composition rather than max/clamp.
+    float outerOpacity = min(outerHorizontal, verticalOpacity);
+    float innerOpacity = min(innerHorizontal, verticalOpacity);
+    float overlappedOpacity = 1.0 - (1.0 - outerOpacity) * (1.0 - innerOpacity);
+
+    // The avatar's CRT texture supplies vertically moving scanline flicker.
+    vec4 crt = texture(crtTexture,
+                       vec2(fract(uv.x * 2.0), fract(uv.y * 2.0 - ubuf.scanPhase)));
+    float crtLuma = dot(crt.rgb, vec3(0.2126, 0.7152, 0.0722));
+    float crtFlicker = mix(0.72, 1.12,
+                           smoothstep(0.16, 0.90, crtLuma) * crt.a);
+
+    // Speech amplitude pulses brightness without changing cone geometry.
+    float speechPulse = 1.0 + speech * 0.45;
+    float alpha = clamp(overlappedOpacity * crtFlicker
+                        * speechPulse * verticalMask, 0.0, 0.92);
+    vec3 color = ubuf.beamColor.rgb * (0.76 + crtFlicker * 0.24);
+
+    fragColor = vec4(color * alpha, alpha) * ubuf.qt_Opacity;
+}
