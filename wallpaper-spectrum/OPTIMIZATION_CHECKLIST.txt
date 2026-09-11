@@ -1,0 +1,132 @@
+HK-47 SPECTRUM OPTIMIZATION CHECKLIST
+
+Purpose
+-------
+Use this checklist before changing the Quickshell audio-reactive spectrum.
+Preserve 640 analyzer bins, width-dependent mirrored stripes, AMD-only rendering,
+and the current visual behavior unless a change is explicitly intended.
+
+Current verified baseline
+-------------------------
+[✓] FFT: 1280-point single-precision FFTW real-to-complex plan
+[✓] Analyzer output: first 640 unique bins, 0..23962.5 Hz
+[✓] Input: 48000 Hz, float32 stereo stdin, downmixed per hop
+[✓] Theme.frameRate: 24 Hz
+[✓] Analyzer hop: 2000 samples at 24 Hz
+[✓] Temporal smoothing: 20 ms attack, 140 ms release
+[✓] Native SpectrumModel parses each CSV frame once in C++
+[✓] Native SpectrumBars uses one batched scene-graph node per monitor
+[✓] Width mapping: floor(physical screen width / 4) bins per half
+[✓] DP-1: 2560 px -> 640 bins/half -> 1280 total stripes
+[✓] HDMI-A-1: 1920 physical px -> 480 bins/half -> 960 total stripes
+[✓] AMD-only renderer: /dev/dri/renderD128
+[✓] Live presentation: approximately 24 FPS on both monitors
+[✓] Analyzer tests: 10/10, including ASan and UBSan runs
+
+Measured CPU baseline at 24 Hz
+------------------------------
+Quickshell renderer/model: 6.66% of one CPU core
+FFT analyzer:              1.25% of one CPU core
+Audio capture:             0.62% of one CPU core
+Combined:                  8.53% of one CPU core
+
+Important comparison note
+-------------------------
+Do not compare CPU figures without recording frame rate and bin workload.
+The previous 60 Hz native 640-bin version measured 17.90% combined CPU.
+The current 24 Hz version measures 8.53%. The reduction includes both native
+transport improvements and 60 Hz -> 24 Hz scheduling reduction.
+
+Optimization order
+------------------
+
+1. Suppress redundant frame notifications during silence
+   [✓] Compare the newly parsed 640-float frame against the previous frame.
+   [✓] If unchanged, update diagnostic counters as needed but do not emit
+       SpectrumModel::frameChanged().
+   [✓] Confirm bars remain cleared and active audio still responds immediately.
+   [✓] Test exact silence, decay-to-zero, and restart/reconnect behavior.
+   [✓] Measure idle CPU before and after.
+   Result: idle test measured 2.75% combined CPU; active test measured 7.40%,
+   down 13.2% from the previous 8.53% active baseline.
+   Risk: Low. Do not introduce a comparison threshold initially; exact equality
+   is safer because the analyzer already emits exact zeros at the noise floor.
+
+2. Add adaptive idle scheduling
+   [✓] Keep 24 Hz updates while audio is active.
+   [✓] During release/decay, reduce visual notifications to approximately 6-8 Hz
+       if the visual result remains acceptable.
+   [✓] Stop renderer notifications when all bins reach zero.
+   [✓] Keep capture alive unless there is a demonstrated reason to stop it.
+   [✓] Restart full-rate notifications immediately when a nonzero frame arrives.
+   [✓] Verify attack latency, release smoothness, and no stale bars.
+   [✓] Measure idle CPU before and after.
+   Result: native contract verifies 125 ms decay notification spacing and an
+   unconditional final zero notification. Live active presentation remained
+   24.00 FPS on both monitors; idle combined CPU measured 3.00% in this run.
+   Risk: Medium. Preserve the 24 Hz active-audio target and measure subjective
+   response before accepting the change.
+
+3. Consider native binary transport only if necessary
+   [✓] Profile first; do not implement based on assumption.
+   [✓] Move analyzer-process ownership into the native plugin if QML transport
+       remains a measurable cost.
+   [✓] Replace CSV with fixed-size binary float frames.
+   [✓] Parse/read one 640-float frame directly into SpectrumModel storage.
+   [✓] Preserve frame validation, rejected counts, peak, age, reconnect, and
+       child-process cleanup.
+   [✓] Keep capture device selection and AMD/NVIDIA restrictions explicit.
+   [✓] Re-run all analyzer, renderer, live, and sanitizer tests.
+   Result: SpectrumModel now owns the supervised capture QProcess and reassembles
+   arbitrary stdout chunks into exact 2560-byte little-endian float32 frames.
+   QML performs no process ownership, line splitting, decimal conversion, or
+   per-frame parsing. Native lifecycle tests cover restart, reaping, stop, and
+   frame-rate environment propagation. Optimized and ASan/UBSan analyzer suites
+   pass 10/10; native and live tests pass with zero rejected frames. Active CPU
+   measured 6.89% combined, down 6.9% from 7.40%; silent idle measured 1.50%,
+   down 50.0% from 3.00%. Both displays remained at 24.00 FPS.
+   Risk: High. This changes process ownership and failure/recovery behavior.
+
+Low-value targets; do not prioritize
+-------------------------------------
+[ ] Do not optimize FFTW first; it currently consumes only about 1.25% CPU.
+[ ] Do not hand-tune color calculations before measuring a real bottleneck.
+[ ] Do not reduce geometry/index counts unless profiling proves scene-graph
+    upload cost is significant.
+[ ] Do not replace the batched native renderer with QML bar delegates.
+[ ] Do not use Canvas-to-ShaderEffect texture transport; previous experiments
+    caused hangs or stale textures.
+[ ] Do not use the NVIDIA GPU. It remains reserved for VFIO and explicitly
+    approved AI workloads.
+
+Verification gate after every optimization
+-------------------------------------------
+[ ] Run: python test_fft.py
+[ ] Run: python test_render.py
+[ ] Stop production profile before running test_live.py
+[ ] Run: python test_live.py
+[ ] Confirm status reports bins=640, frameRate=24, rejected=0
+[ ] Confirm active audio changes the screenshot and silence restores it exactly
+[ ] Confirm both monitors remain approximately 24 FPS
+[ ] Measure Quickshell plus analyzer and capture CPU over a timed interval
+[ ] Check renderer file descriptors: AMD renderD128 only, no NVIDIA device
+[ ] Check bottom-layer placement and desktop/wallpaper preservation
+[ ] Update README.txt with real measurements; never invent benchmark values
+[ ] Restart production using start.sh and verify IPC status after deployment
+
+Relevant files
+--------------
+Theme.js
+SpectrumReader.qml
+SpectrumSurface.qml
+shell.qml
+native/SpectrumBarsPlugin.cpp
+fft-spectrum.cpp
+fft-spectrum
+capture.sh
+start.sh
+test_fft.py
+test_render.py
+test_native_process.py
+test_live.py
+README.txt

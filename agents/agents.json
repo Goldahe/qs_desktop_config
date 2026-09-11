@@ -1,0 +1,26 @@
+{
+  "agents": [
+    {
+      "name": "Hermes Agent",
+      "description": "The self-improving AI agent built by Nous Research.",
+      "icon": "$HOME/Work/AI_Dev/Llama/hermes-agent.png",
+      "command": "hermes",
+      "terminal": true
+    },
+    {
+      "name": "Codex - OpenAI",
+      "description": "Coding agent from OpenAI.",
+      "icon": "$HOME/Work/AI_Dev/Llama/codex-color.png",
+      "command": "codex",
+      "terminal": true,
+      "path": "$HOME"
+    },
+    {
+      "name": "DeepSeek Harness",
+      "description": "Everything is a plugin!",
+      "icon": "$HOME/Work/AI_Dev/Llama/deepseek.png",
+      "command": "",
+      "terminal": true
+    }
+  ]
+}
