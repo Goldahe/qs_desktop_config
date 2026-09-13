@@ -55,7 +55,7 @@ rollback_transition() {
         printf 'game\n' > "$state_file"
         set_chatterbox_plugin disabled
         kill_profile "$config_root/wallpaper-spectrum"
-        kill_profile "$config_root/HK-47_Avatar"
+        python "$config_root/main/avatar-control.py" kill-all {theme_lock_fd}>&-
         kill_profile "$config_root/wallpaper"
         bash "$config_root/wallpaper/start.sh" {theme_lock_fd}>&-
     else
@@ -80,7 +80,7 @@ case "$mode" in
         set_chatterbox_plugin disabled
         # Keep only the taskbar and the static wallpaper background.
         kill_profile "$config_root/wallpaper-spectrum"
-        kill_profile "$config_root/HK-47_Avatar"
+        python "$config_root/main/avatar-control.py" kill-all {theme_lock_fd}>&-
         kill_profile "$config_root/wallpaper"
         bash "$config_root/wallpaper/start.sh" {theme_lock_fd}>&-
         ;;

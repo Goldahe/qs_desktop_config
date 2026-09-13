@@ -2,6 +2,8 @@
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 
+python ../main/avatar-control.py allowed hk47-hologram
+
 runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 if [[ -f "$runtime_dir/quickshell-display-mode" ]] && [[ $(<"$runtime_dir/quickshell-display-mode") == game ]]; then
     exit 0

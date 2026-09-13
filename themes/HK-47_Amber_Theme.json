@@ -2,6 +2,8 @@
   "id": "HK-47_Amber_Theme",
   "name": "HK-47 Amber Theme",
   "description": "Alternate amber tactical palette with the same proven desktop layout.",
+  "avatarId": "hk47-hologram",
+  "personalityId": "hk-47",
   "palette": {
     "#0b1720": "#20160b",
     "#10161b": "#1b1610",

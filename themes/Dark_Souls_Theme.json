@@ -2,6 +2,8 @@
   "id": "Dark_Souls_Theme",
   "name": "Dark Souls — Age of Fire",
   "description": "Cold ruined stone, tarnished steel, moss, and restrained bonfire ember accents.",
+  "avatarId": "shrine-maiden",
+  "personalityId": "fire_keeper",
   "palette": {
     "#0b1720": "#090d0e",
     "#10161b": "#0d1112",

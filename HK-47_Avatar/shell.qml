@@ -5,13 +5,14 @@ ShellRoot {
     id: root
     property bool gameMode: false
     property bool modeKnown: false
+    readonly property string controller: Quickshell.env("HOME") + "/.config/quickshell/main/avatar-control.py"
 
     Process {
         id: modeStateProcess
-        command: ["sh", "-c", "grep -qx game \"$XDG_RUNTIME_DIR/quickshell-display-mode\""]
+        command: ["python", root.controller, "allowed", "hk47-hologram"]
         running: true
         onExited: function(exitCode) {
-            if (exitCode === 0) {
+            if (exitCode !== 0) {
                 Qt.quit()
                 return
             }

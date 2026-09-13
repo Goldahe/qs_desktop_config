@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "avatars": {
+    "hk47-hologram": {
+      "config": "HK-47_Avatar",
+      "ipcTarget": "hk47Avatar",
+      "adapter": "hk47-hologram",
+      "requiredAssets": [
+        "AvatarPortrait.qml",
+        "HologramBeam.qml",
+        "shaders/avatar-shine.frag",
+        "shaders/hologram-beam.frag",
+        "$HOME/Avatar/HK-47.png",
+        "$HOME/Avatar/HK-47_CRT_effect.png"
+      ]
+    },
+    "shrine-maiden": {
+      "config": "Shrine_Maiden_Avatar",
+      "ipcTarget": "shrineMaidenAvatar",
+      "adapter": "static-portrait",
+      "requiredAssets": [
+        "Portrait.qml",
+        "shell.qml",
+        "assets/fire-keeper.png"
+      ]
+    }
+  }
+}

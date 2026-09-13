@@ -18,9 +18,17 @@ SPECTRUM = ROOT / 'wallpaper-spectrum' / 'Theme.js'
 STATE = ROOT / 'main' / 'ThemeControlState.js'
 SHELL_THEME = ROOT / 'main' / 'ShellTheme.js'
 THEMES = ROOT / 'themes'
+HYPRLAND = Path.home() / '.config' / 'hypr' / 'hyprland.lua'
+KITTY = Path.home() / '.config' / 'kitty' / 'kitty.conf'
+KITTY_THEME = KITTY.parent / 'theme-current.conf'
+NVIM = Path.home() / '.config' / 'nvim'
+NVIM_THEME = NVIM / 'colors' / 'theme-current.lua'
+AVATAR_REGISTRY = ROOT / 'avatars' / 'registry.json'
+AVATAR_CONTROL = ROOT / 'main' / 'avatar-control.py'
 RUNTIME_DIR = Path(os.environ.get('XDG_RUNTIME_DIR', f'/run/user/{os.getuid()}'))
 LOCK = Path(os.environ.get('QUICKSHELL_THEME_LOCK', RUNTIME_DIR / 'quickshell-theme-control.lock'))
 AVATAR_POLICY = RUNTIME_DIR / 'quickshell-avatar-enabled'
+AVATAR_POLICY_STATE = RUNTIME_DIR / 'quickshell-avatar-policy.json'
 WALLPAPER_KEYS = ('wallpaperSource', 'perScreenWallpapers', 'sourceType',
                   'fitMode', 'imageOpacity', 'dimOpacity', 'dimColor', 'mirror',
                   'loopVideo', 'autoPlay', 'playbackRate')
@@ -28,6 +36,86 @@ SPECTRUM_EFFECT_KEYS = ('heightFraction', 'gain', 'opacity', 'hueOffset', 'frame
                         'barsEnabled', 'wallpaperColorEffectEnabled', 'wallpaperHueBinCount',
                         'wallpaperColorEffectIdleDelayMs', 'wallpaperColorEffectFadeDurationMs')
 EFFECT_KEYS = SPECTRUM_EFFECT_KEYS + ('avatarEnabled',)
+AVATAR_ADAPTERS = {'hk47-hologram', 'static-portrait'}
+PERSONALITY_ID_RE = re.compile(r'[a-z0-9][a-z0-9_-]*\Z')
+HERMES_BIN = Path(os.environ.get('HERMES_BIN', str(Path.home() / '.local/bin/hermes')))
+PERSONALITIES = Path(os.environ.get('HERMES_HOME', str(Path.home() / '.hermes'))) / 'personalities'
+
+
+def load_avatar_registry() -> dict[str, dict]:
+    data = json.loads(AVATAR_REGISTRY.read_text())
+    avatars = data.get('avatars') if isinstance(data, dict) else None
+    if data.get('version') != 1 or not isinstance(avatars, dict) or not avatars:
+        raise RuntimeError(f'invalid avatar registry: {AVATAR_REGISTRY}')
+    validated = {}
+    for avatar_id, entry in avatars.items():
+        if not re.fullmatch(r'[a-z0-9][a-z0-9_-]*', str(avatar_id)):
+            raise RuntimeError(f'invalid avatar identifier: {avatar_id!r}')
+        if not isinstance(entry, dict):
+            raise RuntimeError(f'avatar {avatar_id} registry entry must be an object')
+        config = entry.get('config')
+        target = entry.get('ipcTarget')
+        adapter = entry.get('adapter')
+        assets = entry.get('requiredAssets')
+        if not isinstance(config, str) or not re.fullmatch(r'[A-Za-z0-9_-]+', config):
+            raise RuntimeError(f'avatar {avatar_id} has an invalid config')
+        if not isinstance(target, str) or not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*', target):
+            raise RuntimeError(f'avatar {avatar_id} has an invalid IPC target')
+        if adapter not in AVATAR_ADAPTERS:
+            raise RuntimeError(f'avatar {avatar_id} has an unsupported adapter')
+        if not isinstance(assets, list) or not assets or any(not isinstance(path, str) or not path for path in assets):
+            raise RuntimeError(f'avatar {avatar_id} has invalid required assets')
+        validated[str(avatar_id)] = dict(entry)
+    return validated
+
+
+def resolve_avatar_profile(avatar_id: str) -> dict:
+    registry = load_avatar_registry()
+    if avatar_id not in registry:
+        raise RuntimeError(f'unknown avatar: {avatar_id!r}')
+    entry = dict(registry[avatar_id])
+    config_dir = (ROOT / entry['config']).resolve()
+    if config_dir.parent != ROOT.resolve() or not config_dir.is_dir():
+        raise RuntimeError(f'avatar {avatar_id} has no approved config directory: {config_dir}')
+    resolved_assets = []
+    for asset in entry['requiredAssets']:
+        path = Path(os.path.expandvars(asset)).expanduser()
+        if not path.is_absolute():
+            path = (config_dir / path).resolve()
+            try:
+                path.relative_to(config_dir)
+            except ValueError as error:
+                raise RuntimeError(f'avatar {avatar_id} asset escapes its config directory: {asset}') from error
+        if not path.is_file():
+            raise RuntimeError(f'avatar {avatar_id} required asset is missing: {path}')
+        resolved_assets.append(str(path))
+    entry.update(id=avatar_id, configPath=str(config_dir), resolvedAssets=resolved_assets)
+    return entry
+
+
+def resolve_personality_profile(personality_id: str) -> Path:
+    if not isinstance(personality_id, str) or not PERSONALITY_ID_RE.fullmatch(personality_id):
+        raise RuntimeError(f'invalid personality identifier: {personality_id!r}')
+    root = PERSONALITIES.resolve()
+    path = (root / personality_id / 'SOUL.md').resolve()
+    try:
+        path.relative_to(root)
+    except ValueError as error:
+        raise RuntimeError(f'personality escapes approved root: {personality_id!r}') from error
+    if not path.is_file():
+        raise RuntimeError(f'personality SOUL.md is missing: {path}')
+    return path
+
+
+def persist_personality(personality_id: str) -> None:
+    resolve_personality_profile(personality_id)
+    result = subprocess.run(
+        [str(HERMES_BIN), 'config', 'set', 'display.personality', personality_id],
+        check=False, capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout).strip()
+        raise RuntimeError(f'could not persist personality {personality_id!r}: {detail}')
 
 
 def portable_home(path: str) -> str:
@@ -112,33 +200,137 @@ def js_value(value) -> str:
     return f'({encoded})' if isinstance(value, dict) else encoded
 
 
-def write_avatar_policy(enabled: bool) -> None:
-    AVATAR_POLICY.parent.mkdir(parents=True, exist_ok=True)
-    fd, temporary = tempfile.mkstemp(prefix=AVATAR_POLICY.name + '.', dir=AVATAR_POLICY.parent)
+def theme_color(palette: dict, source: str, alpha: str | None = None) -> str:
+    value = str(palette[source]).lower()
+    if len(value) == 9:
+        value = value[:7]
+    return value + (alpha or '')
+
+
+def external_theme_files(palette: dict) -> dict[Path, str]:
+    """Render the selector palette into Hyprland and Kitty consumer formats."""
+    active_a = theme_color(palette, '#8fcdf0', 'ee')
+    active_b = theme_color(palette, '#3b88a3', 'ee')
+    inactive = '#00000000'
+    shadow = '0x' + theme_color(palette, '#10161b', 'ee')[1:]
+    hypr = HYPRLAND.read_text()
+    assignments = {
+        'theme_active_border_a': json.dumps(f'rgba({active_a[1:]})'),
+        'theme_active_border_b': json.dumps(f'rgba({active_b[1:]})'),
+        'theme_inactive_border': json.dumps(f'rgba({inactive[1:]})'),
+        'theme_shadow': shadow,
+    }
+    for name, value in assignments.items():
+        hypr, count = re.subn(rf'(?m)^(local {name}\s*=\s*).+$', rf'\g<1>{value}', hypr)
+        if count != 1:
+            raise RuntimeError(f'expected one theme assignment {name} in {HYPRLAND}')
+
+    kitty_colors = {
+        'background': theme_color(palette, '#0b1720'),
+        'foreground': theme_color(palette, '#ffffff'),
+        'cursor': theme_color(palette, '#8fcdf0'),
+        'cursor_text_color': theme_color(palette, '#0b1720'),
+        'selection_background': theme_color(palette, '#3b88a3'),
+        'selection_foreground': theme_color(palette, '#ffffff'),
+        'color0': theme_color(palette, '#0b1720'),
+        'color1': theme_color(palette, '#d36a6a'),
+        'color2': theme_color(palette, '#69c486'),
+        'color3': theme_color(palette, '#ffd37d'),
+        'color4': theme_color(palette, '#3b88a3'),
+        'color5': theme_color(palette, '#d7bdff'),
+        'color6': theme_color(palette, '#33c6e48b'),
+        'color7': theme_color(palette, '#c8c8c8'),
+        'color8': theme_color(palette, '#858585'),
+        'color9': theme_color(palette, '#ff9098'),
+        'color10': theme_color(palette, '#a8e6a3'),
+        'color11': theme_color(palette, '#ffdca0'),
+        'color12': theme_color(palette, '#8fcdf0'),
+        'color13': theme_color(palette, '#d7bdff'),
+        'color14': theme_color(palette, '#a9d8ea'),
+        'color15': theme_color(palette, '#ffffff'),
+    }
+    kitty = '# Generated by Quickshell theme selector. Do not edit.\n'
+    kitty += ''.join(f'{key} {value}\n' for key, value in kitty_colors.items())
+    nvim = '''-- Generated by Quickshell theme selector. Do not edit.\n'''
+    nvim += 'vim.cmd("highlight clear")\nvim.g.colors_name = "theme-current"\n'
+    colors = {
+        'bg': theme_color(palette, '#0b1720'), 'bg_alt': theme_color(palette, '#10161b'),
+        'fg': theme_color(palette, '#ffffff'), 'muted': theme_color(palette, '#858585'),
+        'accent': theme_color(palette, '#3b88a3'), 'bright': theme_color(palette, '#8fcdf0'),
+        'red': theme_color(palette, '#d36a6a'), 'green': theme_color(palette, '#69c486'),
+        'yellow': theme_color(palette, '#ffd37d'), 'purple': theme_color(palette, '#d7bdff'),
+        'cyan': theme_color(palette, '#a9d8ea'),
+    }
+    nvim += 'local c = {' + ', '.join(f'{key} = "{value}"' for key, value in colors.items()) + '}\n'
+    nvim += '''local function hi(group, opts) vim.api.nvim_set_hl(0, group, opts) end
+hi("Normal", { fg = c.fg, bg = c.bg })
+hi("NormalFloat", { fg = c.fg, bg = c.bg_alt })
+hi("FloatBorder", { fg = c.accent, bg = c.bg_alt })
+hi("CursorLine", { bg = c.bg_alt })
+hi("CursorLineNr", { fg = c.bright, bold = true })
+hi("LineNr", { fg = c.muted })
+hi("Visual", { bg = c.accent, fg = c.fg })
+hi("Search", { bg = c.yellow, fg = c.bg })
+hi("IncSearch", { bg = c.bright, fg = c.bg })
+hi("StatusLine", { fg = c.fg, bg = c.bg_alt })
+hi("StatusLineNC", { fg = c.muted, bg = c.bg_alt })
+hi("WinSeparator", { fg = c.accent })
+hi("Directory", { fg = c.bright })
+hi("Comment", { fg = c.muted, italic = true })
+hi("Constant", { fg = c.cyan })
+hi("String", { fg = c.green })
+hi("Character", { fg = c.green })
+hi("Number", { fg = c.yellow })
+hi("Boolean", { fg = c.yellow })
+hi("Identifier", { fg = c.bright })
+hi("Function", { fg = c.bright, bold = true })
+hi("Statement", { fg = c.purple })
+hi("Keyword", { fg = c.purple })
+hi("Type", { fg = c.cyan })
+hi("Special", { fg = c.accent })
+hi("Error", { fg = c.red, bold = true })
+hi("DiagnosticError", { fg = c.red })
+hi("DiagnosticWarn", { fg = c.yellow })
+hi("DiagnosticInfo", { fg = c.bright })
+hi("DiagnosticHint", { fg = c.green })
+'''
+    return {HYPRLAND: hypr, KITTY_THEME: kitty, NVIM_THEME: nvim}
+
+
+def atomic_runtime_write(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=path.name + '.', dir=path.parent)
     try:
         with os.fdopen(fd, 'w') as handle:
-            handle.write('1\n' if enabled else '0\n')
+            handle.write(content)
         os.chmod(temporary, 0o600)
-        os.replace(temporary, AVATAR_POLICY)
+        os.replace(temporary, path)
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
 
 
-def restore_avatar_policy(previous: str | None) -> None:
+def write_avatar_policy(enabled: bool, avatar_id: str | None = None) -> None:
+    if avatar_id is None:
+        avatar_id = str(state_value('selectedAvatarId'))
+    resolve_avatar_profile(avatar_id)
+    atomic_runtime_write(AVATAR_POLICY, '1\n' if enabled else '0\n')
+    atomic_runtime_write(AVATAR_POLICY_STATE, json.dumps({
+        'enabled': bool(enabled),
+        'avatarId': avatar_id,
+        'revision': time.time_ns(),
+    }, separators=(',', ':')) + '\n')
+
+
+def restore_avatar_policy(previous: str | None, previous_state: str | None = None) -> None:
     if previous is None:
         AVATAR_POLICY.unlink(missing_ok=True)
-        return
-    AVATAR_POLICY.parent.mkdir(parents=True, exist_ok=True)
-    fd, temporary = tempfile.mkstemp(prefix=AVATAR_POLICY.name + '.rollback.', dir=AVATAR_POLICY.parent)
-    try:
-        with os.fdopen(fd, 'w') as handle:
-            handle.write(previous)
-        os.chmod(temporary, 0o600)
-        os.replace(temporary, AVATAR_POLICY)
-    finally:
-        if os.path.exists(temporary):
-            os.unlink(temporary)
+    else:
+        atomic_runtime_write(AVATAR_POLICY, previous)
+    if previous_state is None:
+        AVATAR_POLICY_STATE.unlink(missing_ok=True)
+    else:
+        atomic_runtime_write(AVATAR_POLICY_STATE, previous_state)
 
 
 def available_themes() -> list[dict[str, str]]:
@@ -168,6 +360,11 @@ def load_theme(theme_id: str) -> dict:
         raise RuntimeError(f'theme root must be an object: {path}')
     if data.get('id') != theme_id:
         raise RuntimeError(f'theme id does not match filename: {path}')
+    avatar_id = data.get('avatarId')
+    if not isinstance(avatar_id, str) or avatar_id not in load_avatar_registry():
+        raise RuntimeError(f'theme {theme_id} has an unknown avatarId: {avatar_id!r}')
+    personality_id = data.get('personalityId')
+    resolve_personality_profile(personality_id)
     for section in ('palette', 'wallpaper', 'effects'):
         if not isinstance(data.get(section), dict):
             raise RuntimeError(f'theme {theme_id} has no {section} object')
@@ -230,6 +427,12 @@ def load_theme(theme_id: str) -> dict:
         if not re.fullmatch(r'#[0-9a-f]{6}(?:[0-9a-f]{2})?', target):
             raise RuntimeError(f'invalid palette target {target!r}')
         palette[source] = target
+    for source in ('#0b1720', '#10161b', '#3b88a3', '#69c486', '#858585',
+                   '#8fcdf0', '#a8e6a3', '#a9d8ea', '#d36a6a', '#d7bdff',
+                   '#ffd37d', '#ffdca0', '#ff9098', '#ffffff', '#33c6e48b',
+                   '#c8c8c8'):
+        if source not in palette:
+            raise RuntimeError(f'theme {theme_id} palette lacks external color {source}')
     identity_path = THEMES / 'HK-47_Theme.json'
     identity = json.loads(identity_path.read_text())
     identity_palette = identity.get('palette', {}) if isinstance(identity, dict) else {}
@@ -251,12 +454,17 @@ def load_theme(theme_id: str) -> dict:
 
 def apply_theme(theme_id: str) -> tuple[bool, bool, bool]:
     theme = load_theme(theme_id)
+    resolve_avatar_profile(theme['avatarId'])
     wallpaper = theme['wallpaper']
     effects = theme['effects']
 
-    originals = {path: path.read_text() for path in (SHELL_THEME, STATE, BASE, SPECTRUM)}
+    originals = {path: path.read_text() for path in (SHELL_THEME, STATE, BASE, SPECTRUM, HYPRLAND)}
     updates = originals.copy()
+    updates[HYPRLAND] = external_theme_files(theme['palette'])[HYPRLAND]
     previous_policy = AVATAR_POLICY.read_text() if AVATAR_POLICY.exists() else None
+    previous_policy_state = AVATAR_POLICY_STATE.read_text() if AVATAR_POLICY_STATE.exists() else None
+    previous_kitty_theme = KITTY_THEME.read_text() if KITTY_THEME.exists() else None
+    previous_nvim_theme = NVIM_THEME.read_text() if NVIM_THEME.exists() else None
 
     def assign(path: Path, name: str, value: str) -> None:
         updates[path] = updated_var(updates[path], path, name, value)
@@ -264,6 +472,7 @@ def apply_theme(theme_id: str) -> tuple[bool, bool, bool]:
     assign(SHELL_THEME, 'selectedTheme', js_value(theme_id))
     assign(SHELL_THEME, 'palette', js_value(theme['palette']))
     assign(STATE, 'selectedTheme', js_value(theme_id))
+    assign(STATE, 'selectedAvatarId', js_value(theme['avatarId']))
 
     for name in WALLPAPER_KEYS:
         value = js_value(wallpaper[name])
@@ -283,18 +492,39 @@ def apply_theme(theme_id: str) -> tuple[bool, bool, bool]:
     assign(STATE, 'avatarEnabled', js_value(avatar))
     replace_files_atomically(updates)
     try:
-        write_avatar_policy(avatar)
+        generated = external_theme_files(theme['palette'])
+        atomic_runtime_write(KITTY_THEME, generated[KITTY_THEME])
+        atomic_runtime_write(NVIM_THEME, generated[NVIM_THEME])
+        write_avatar_policy(avatar, theme['avatarId'])
+        persist_personality(theme['personalityId'])
     except BaseException:
         replace_files_atomically(originals)
-        restore_avatar_policy(previous_policy)
+        if previous_kitty_theme is None:
+            KITTY_THEME.unlink(missing_ok=True)
+        else:
+            atomic_runtime_write(KITTY_THEME, previous_kitty_theme)
+        if previous_nvim_theme is None:
+            NVIM_THEME.unlink(missing_ok=True)
+        else:
+            atomic_runtime_write(NVIM_THEME, previous_nvim_theme)
+        restore_avatar_policy(previous_policy, previous_policy_state)
         raise
     return bars, wallpaper_enabled, avatar
+
+
+def reload_external_consumers() -> None:
+    result = subprocess.run(['hyprctl', 'reload'], check=False, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(f'Hyprland reload failed: {(result.stderr or result.stdout).strip()}')
+    subprocess.run(['pkill', '-USR1', '-x', 'kitty'], check=False,
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def apply_custom_settings(args) -> None:
     originals = {path: path.read_text() for path in (SHELL_THEME, STATE, BASE, SPECTRUM)}
     updates = originals.copy()
     previous_policy = AVATAR_POLICY.read_text() if AVATAR_POLICY.exists() else None
+    previous_policy_state = AVATAR_POLICY_STATE.read_text() if AVATAR_POLICY_STATE.exists() else None
 
     def assign(path: Path, name: str, value: str) -> None:
         updates[path] = updated_var(updates[path], path, name, value)
@@ -336,10 +566,10 @@ def apply_custom_settings(args) -> None:
     assign(STATE, 'avatarEnabled', js_value(bool(args.avatar)))
     replace_files_atomically(updates)
     try:
-        write_avatar_policy(bool(args.avatar))
+        write_avatar_policy(bool(args.avatar), str(state_value('selectedAvatarId')))
     except BaseException:
         replace_files_atomically(originals)
-        restore_avatar_policy(previous_policy)
+        restore_avatar_policy(previous_policy, previous_policy_state)
         raise
 
 
@@ -382,6 +612,11 @@ def set_screen_wallpaper(screen: str, source: str) -> None:
 
 def kill(profile: Path) -> None:
     subprocess.run(['quickshell', 'kill', '-p', str(profile)], check=False,
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def kill_all_avatars() -> None:
+    subprocess.run(['python', str(AVATAR_CONTROL), 'kill-all'], check=True,
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
@@ -444,7 +679,6 @@ def reload_main(expected_theme: str, timeout: float = 8.0) -> None:
 def restart_wallpapers(args) -> None:
     spectrum = ROOT / 'wallpaper-spectrum'
     wallpaper = ROOT / 'wallpaper'
-    avatar = ROOT / 'HK-47_Avatar'
     mode_file = Path(os.environ.get('XDG_RUNTIME_DIR', f'/run/user/{os.getuid()}')) / 'quickshell-display-mode'
     game_mode = mode_file.read_text().strip() == 'game' if mode_file.exists() else False
 
@@ -455,7 +689,6 @@ def restart_wallpapers(args) -> None:
         wait_gone(wallpaper)
         start(wallpaper / 'start.sh')
         wait_present(wallpaper)
-        kill(avatar)
     elif args.bars or args.wallpaper:
         kill(spectrum)
         wait_gone(spectrum)
@@ -472,8 +705,8 @@ def restart_wallpapers(args) -> None:
         wait_present(wallpaper)
 
     # Chatterbox owns lazy avatar creation. Theme state only permits or blocks it.
-    if game_mode or not args.avatar:
-        kill(avatar)
+    if game_mode or not args.avatar or getattr(args, 'avatar_changed', False):
+        kill_all_avatars()
 
 
 def main() -> None:
@@ -499,22 +732,40 @@ def main() -> None:
 
     with operation_lock(args.lock_held):
         if args.theme:
-            previous_files = {path: path.read_text() for path in (SHELL_THEME, STATE, BASE, SPECTRUM)}
+            previous_files = {path: path.read_text() for path in (SHELL_THEME, STATE, BASE, SPECTRUM, HYPRLAND)}
+            previous_kitty_theme = KITTY_THEME.read_text() if KITTY_THEME.exists() else None
+            previous_nvim_theme = NVIM_THEME.read_text() if NVIM_THEME.exists() else None
             previous = argparse.Namespace(
                 bars=bool(state_value('barsEnabled')),
                 wallpaper=bool(state_value('wallpaperEnabled')),
                 avatar=bool(state_value('avatarEnabled')),
+                avatar_id=str(state_value('selectedAvatarId')),
+                avatar_changed=True,
             )
             bars, wallpaper_enabled, avatar = apply_theme(args.theme)
             if not args.no_restart:
-                themed = argparse.Namespace(bars=bars, wallpaper=wallpaper_enabled,
-                                            avatar=avatar)
+                themed = argparse.Namespace(
+                    bars=bars,
+                    wallpaper=wallpaper_enabled,
+                    avatar=avatar,
+                    avatar_changed=(previous.avatar_id != str(state_value('selectedAvatarId'))),
+                )
                 try:
+                    reload_external_consumers()
                     restart_wallpapers(themed)
                     if not args.no_main_reload:
                         reload_main(args.theme)
                 except BaseException:
                     replace_files_atomically(previous_files)
+                    if previous_kitty_theme is None:
+                        KITTY_THEME.unlink(missing_ok=True)
+                    else:
+                        atomic_runtime_write(KITTY_THEME, previous_kitty_theme)
+                    if previous_nvim_theme is None:
+                        NVIM_THEME.unlink(missing_ok=True)
+                    else:
+                        atomic_runtime_write(NVIM_THEME, previous_nvim_theme)
+                    reload_external_consumers()
                     write_avatar_policy(previous.avatar)
                     restart_wallpapers(previous)
                     raise
@@ -525,6 +776,7 @@ def main() -> None:
                 bars=bool(state_value('barsEnabled')),
                 wallpaper=bool(state_value('wallpaperEnabled')),
                 avatar=bool(state_value('avatarEnabled')),
+                avatar_changed=False,
             )
             restart_wallpapers(current)
             return
@@ -537,6 +789,7 @@ def main() -> None:
             bars=bool(state_value('barsEnabled')),
             wallpaper=bool(state_value('wallpaperEnabled')),
             avatar=bool(state_value('avatarEnabled')),
+            avatar_changed=False,
         )
         apply_custom_settings(args)
         if not args.no_restart:

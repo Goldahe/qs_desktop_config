@@ -46,6 +46,23 @@ def copy_fixture(target: Path) -> None:
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, destination)
     shutil.copytree(ROOT / "themes", target / "themes")
+    personalities = target / "personalities"
+    (personalities / "fire_keeper").mkdir(parents=True)
+    (personalities / "hk-47").mkdir(parents=True)
+    shutil.copy2(Path.home() / ".hermes/personalities/fire_keeper/SOUL.md", personalities / "fire_keeper/SOUL.md")
+    shutil.copy2(Path.home() / ".hermes/personalities/hk-47/SOUL.md", personalities / "hk-47/SOUL.md")
+    registry_source = ROOT / "avatars/registry.json"
+    registry_target = target / "avatars/registry.json"
+    registry_target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(registry_source, registry_target)
+    registry = json.loads(registry_target.read_text())["avatars"]
+    for entry in registry.values():
+        for asset in entry["requiredAssets"]:
+            if Path(asset).is_absolute():
+                continue
+            destination = target / entry["config"] / asset
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_text("fixture\n")
 
 
 def run_controller(root: Path, *arguments: str,
@@ -71,6 +88,8 @@ def load_controller(root: Path):
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    module.PERSONALITIES = (Path.home() / ".hermes/personalities" if root == ROOT else root / "personalities")
+    module.persist_personality = lambda _personality_id: None
     return module
 
 
@@ -123,7 +142,7 @@ def test_theme_apply_rolls_back_when_avatar_policy_write_fails() -> None:
         controller.AVATAR_POLICY = root / "runtime/quickshell-avatar-enabled"
         before = {path: path.read_text() for path in mutable_files(root)}
 
-        def fail_policy(_enabled):
+        def fail_policy(_enabled, _avatar_id=None):
             raise OSError("simulated policy failure")
 
         controller.write_avatar_policy = fail_policy
@@ -136,6 +155,47 @@ def test_theme_apply_rolls_back_when_avatar_policy_write_fails() -> None:
 
         for path, content in before.items():
             assert path.read_text() == content, f"policy failure left mixed state in {path}"
+
+
+def test_missing_avatar_asset_rejects_theme_before_mutation() -> None:
+    with tempfile.TemporaryDirectory(prefix="qs-theme-avatar-assets-") as directory:
+        root = Path(directory)
+        copy_fixture(root)
+        controller = load_controller(root)
+        before = {path: path.read_text() for path in mutable_files(root)}
+        missing = root / "Shrine_Maiden_Avatar/assets/fire-keeper.png"
+        missing.unlink()
+
+        try:
+            controller.apply_theme("Dark_Souls_Theme")
+        except RuntimeError as error:
+            assert "required asset" in str(error)
+            assert "fire-keeper.png" in str(error)
+        else:
+            raise AssertionError("theme with a missing avatar asset was accepted")
+
+        for path, content in before.items():
+            assert path.read_text() == content, f"missing avatar asset modified {path}"
+
+
+def test_theme_persists_selected_avatar_and_atomic_runtime_policy() -> None:
+    with tempfile.TemporaryDirectory(prefix="qs-theme-avatar-state-") as directory:
+        root = Path(directory)
+        copy_fixture(root)
+        controller = load_controller(root)
+        runtime = root / "runtime"
+        runtime.mkdir()
+        controller.AVATAR_POLICY = runtime / "quickshell-avatar-enabled"
+        controller.AVATAR_POLICY_STATE = runtime / "quickshell-avatar-policy.json"
+
+        controller.apply_theme("Dark_Souls_Theme")
+
+        assert assignment(root / "main/ThemeControlState.js", "selectedAvatarId") == "shrine-maiden"
+        assert controller.AVATAR_POLICY.read_text().strip() == "1"
+        policy = json.loads(controller.AVATAR_POLICY_STATE.read_text())
+        assert policy["enabled"] is True
+        assert policy["avatarId"] == "shrine-maiden"
+        assert isinstance(policy["revision"], int) and policy["revision"] > 0
 
 
 def test_controller_rejects_an_overlapping_write_operation() -> None:
@@ -187,6 +247,10 @@ def test_manual_wallpaper_or_effect_change_marks_theme_custom() -> None:
         assert assignment(root / "main/ThemeControlState.js", "selectedTheme") == "custom"
         assert assignment(root / "main/ShellTheme.js", "selectedTheme") == "custom"
         assert assignment(root / "main/ThemeControlState.js", "wallpaperSource") == "/tmp/manual-wallpaper.png"
+        assert assignment(root / "main/ThemeControlState.js", "selectedAvatarId") == "shrine-maiden"
+        policy = json.loads((root / "runtime/quickshell-avatar-policy.json").read_text())
+        assert policy["avatarId"] == "shrine-maiden"
+        assert policy["enabled"] is False
 
 
 def test_work_mode_restores_current_theme_policy() -> None:
@@ -226,6 +290,16 @@ def test_work_mode_restores_current_theme_policy() -> None:
         assert result.returncode == 0, result.stderr
         assert (runtime / "quickshell-display-mode").read_text().strip() == "work"
         assert log.read_text().startswith("work "), log.read_text()
+
+
+def test_theme_and_mode_controllers_terminate_registered_avatars_generically() -> None:
+    controller = (ROOT / "main/theme-control.py").read_text()
+    mode_switch = (ROOT / "main/mode-switch.sh").read_text()
+    assert "avatar-control.py" in controller
+    assert "kill-all" in controller
+    assert "avatar-control.py" in mode_switch
+    assert "kill-all" in mode_switch
+    assert 'kill_profile "$config_root/HK-47_Avatar"' not in mode_switch
 
 
 def test_mode_contention_never_publishes_uncommitted_marker() -> None:
@@ -277,6 +351,18 @@ def test_every_theme_has_the_complete_identity_palette() -> None:
     for path in (ROOT / "themes").glob("*.json"):
         theme = json.loads(path.read_text())
         assert set(theme["palette"]) == set(identity), path.name
+
+
+def test_every_theme_selects_the_expected_registered_avatar() -> None:
+    controller = load_controller(ROOT)
+    expected = {
+        "HK-47_Theme": "hk47-hologram",
+        "HK-47_Amber_Theme": "hk47-hologram",
+        "Dark_Souls_Theme": "shrine-maiden",
+    }
+    for theme_id, avatar_id in expected.items():
+        theme = controller.load_theme(theme_id)
+        assert theme["avatarId"] == avatar_id
 
 
 def test_hk47_theme_is_discoverable_and_selected() -> None:
@@ -351,9 +437,11 @@ def test_dark_souls_theme_is_complete_and_discoverable() -> None:
         identity = json.loads((root / "themes/HK-47_Theme.json").read_text())
         assert set(preset["palette"]) == set(identity["palette"])
         assert preset["palette"] != identity["palette"]
-        assert preset["wallpaper"]["wallpaperSource"].endswith("Dark-Souls-Remastered-Theme.jpg")
+        assert preset["wallpaper"]["wallpaperSource"].endswith(
+            "dark-souls-remastered-key-art-4k-p6-2560x1440.jpg"
+        )
         assert preset["effects"]["hueOffset"] > 0.0
-        assert (Path.home() / "Pictures/Wallpapers/Dark-Souls-Remastered-Theme.jpg").is_file()
+        assert (Path.home() / "Pictures/Wallpapers/dark-souls-remastered-key-art-4k-p6-2560x1440.jpg").is_file()
 
         preset_bytes = {
             path.name: path.read_bytes() for path in (root / "themes").glob("*.json")
@@ -412,14 +500,18 @@ def test_every_main_shell_color_uses_the_selected_theme() -> None:
 if __name__ == "__main__":
     test_theme_apply_rolls_back_every_destination_on_replace_failure()
     test_theme_apply_rolls_back_when_avatar_policy_write_fails()
+    test_missing_avatar_asset_rejects_theme_before_mutation()
+    test_theme_persists_selected_avatar_and_atomic_runtime_policy()
     test_controller_rejects_an_overlapping_write_operation()
     test_home_compaction_respects_path_boundaries_in_python_and_qml()
     test_manual_wallpaper_or_effect_change_marks_theme_custom()
     test_work_mode_restores_current_theme_policy()
+    test_theme_and_mode_controllers_terminate_registered_avatars_generically()
     test_mode_contention_never_publishes_uncommitted_marker()
     test_theme_catalog_skips_malformed_json_shapes()
     test_main_theme_reload_uses_verified_quickshell_ipc()
     test_every_theme_has_the_complete_identity_palette()
+    test_every_theme_selects_the_expected_registered_avatar()
     test_hk47_theme_is_discoverable_and_selected()
     test_dark_souls_theme_is_complete_and_discoverable()
     test_every_main_shell_color_uses_the_selected_theme()

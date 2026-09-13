@@ -2,6 +2,8 @@
   "id": "HK-47_Theme",
   "name": "HK-47 Theme",
   "description": "Current HK-47 shell, wallpaper, and reactive effects.",
+  "avatarId": "hk47-hologram",
+  "personalityId": "hk-47",
   "palette": {
     "#0b1720": "#0b1720",
     "#10161b": "#10161b",
