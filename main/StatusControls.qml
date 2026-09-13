@@ -4,6 +4,7 @@ import Quickshell.Services.Pipewire
 import Quickshell.Bluetooth
 import Quickshell.Services.SystemTray
 import Quickshell.Widgets
+import "ShellTheme.js" as ShellTheme
 
 Row {
     id: statusControls
@@ -65,7 +66,7 @@ Row {
                 return "  muted"
             return " " + Math.round(sink.audio.volume * 100) + "%"
         }
-        color: "white"
+        color: ShellTheme.color("#ffffff")
         font.family: "Symbols Nerd Font"
         font.pixelSize: 14
         height: parent.height
@@ -79,7 +80,7 @@ Row {
 
     Text {
         text: barWindow.bluetoothText()
-        color: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? "white" : "#858585"
+        color: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled ? ShellTheme.color("#ffffff") : ShellTheme.color("#858585")
         font.family: "Symbols Nerd Font"
         font.pixelSize: 14
         height: parent.height
@@ -93,13 +94,13 @@ Row {
 
 
     Text {
-        text: "󰖩"; color: "#c8c8c8"; font.family: "Symbols Nerd Font"; font.pixelSize: 14
+        text: "󰖩"; color: ShellTheme.color("#c8c8c8"); font.family: "Symbols Nerd Font"; font.pixelSize: 14
         height: parent.height; verticalAlignment: Text.AlignVCenter
         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: barWindow.togglePopup("wifi", true) }
     }
     Text {
         text: Qt.formatDateTime(clock.date, "HH:mm")
-        color: "white"
+        color: ShellTheme.color("#ffffff")
         font.pixelSize: 14
         font.bold: true
         height: parent.height
@@ -108,7 +109,7 @@ Row {
 
     Text {
         text: Qt.formatDateTime(clock.date, "ddd, dd MMM")
-        color: "#c8c8c8"
+        color: ShellTheme.color("#c8c8c8")
         font.pixelSize: 13
         height: parent.height
         verticalAlignment: Text.AlignVCenter
@@ -123,12 +124,12 @@ Row {
         width: 28
         height: 28
         radius: 5
-        color: powerMouse.containsMouse ? "#553f3f" : "transparent"
+        color: powerMouse.containsMouse ? ShellTheme.color("#553f3f") : "transparent"
 
         Text {
             anchors.centerIn: parent
             text: ""
-            color: "#ffb4b4"
+            color: ShellTheme.color("#ffb4b4")
             font.family: "Symbols Nerd Font"
             font.pixelSize: 16
         }

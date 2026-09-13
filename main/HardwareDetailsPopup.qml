@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "ShellTheme.js" as ShellTheme
 
 LifecycleFloating {
     id: detailsPopup
@@ -71,8 +72,8 @@ LifecycleFloating {
     Rectangle {
         anchors.fill: parent
         radius: 10
-        color: "#f21d2026"
-        border.color: "#59616d"
+        color: ShellTheme.color("#f21d2026")
+        border.color: ShellTheme.color("#59616d")
         border.width: 1
 
         Column {
@@ -82,7 +83,7 @@ LifecycleFloating {
 
             Text {
                 text: "󰍛  Hardware Details"
-                color: "#e8edf5"
+                color: ShellTheme.color("#e8edf5")
                 font.family: "Symbols Nerd Font"
                 font.pixelSize: 18
                 font.bold: true
@@ -101,13 +102,13 @@ LifecycleFloating {
                         width: (parent.width - 18) / 4
                         height: 38
                         radius: 6
-                        color: detailsPopup.selectedTab === index ? "#536d9b" : (tabMouse.containsMouse ? "#39424e" : "#2b323b")
-                        border.color: detailsPopup.selectedTab === index ? "#8fb8ff" : "#59616d"
+                        color: detailsPopup.selectedTab === index ? ShellTheme.color("#536d9b") : (tabMouse.containsMouse ? ShellTheme.color("#39424e") : ShellTheme.color("#2b323b"))
+                        border.color: detailsPopup.selectedTab === index ? ShellTheme.color("#8fb8ff") : ShellTheme.color("#59616d")
 
                         Text {
                             anchors.centerIn: parent
                             text: tabName
-                            color: "#e8edf5"
+                            color: ShellTheme.color("#e8edf5")
                             font.pixelSize: 13
                             font.bold: detailsPopup.selectedTab === index
                         }
@@ -123,8 +124,8 @@ LifecycleFloating {
                 }
             }
 
-            Rectangle { width: parent.width; height: 1; color: "#4b5360" }
-            Text { text: "Click a process row to offer graceful termination."; color: "#aebdca"; font.pixelSize: 12 }
+            Rectangle { width: parent.width; height: 1; color: ShellTheme.color("#4b5360") }
+            Text { text: "Click a process row to offer graceful termination."; color: ShellTheme.color("#aebdca"); font.pixelSize: 12 }
 
             Flickable {
                 width: parent.width
@@ -139,25 +140,25 @@ LifecycleFloating {
                     width: parent.width
                     spacing: 9
 
-                    Text { text: hardwareSource.cpuName; color: "#e8edf5"; font.pixelSize: 15; font.bold: true; wrapMode: Text.Wrap; width: parent.width }
-                    Text { text: "Load: " + hardwareSource.cpuLoad + "    Cores: " + hardwareSource.cpuCores + "    Temperature: " + hardwareSource.cpuTemperature; color: "#aebdca"; font.pixelSize: 12 }
+                    Text { text: hardwareSource.cpuName; color: ShellTheme.color("#e8edf5"); font.pixelSize: 15; font.bold: true; wrapMode: Text.Wrap; width: parent.width }
+                    Text { text: "Load: " + hardwareSource.cpuLoad + "    Cores: " + hardwareSource.cpuCores + "    Temperature: " + hardwareSource.cpuTemperature; color: ShellTheme.color("#aebdca"); font.pixelSize: 12 }
 
                     Rectangle {
                         width: parent.width
                         height: 28
-                        color: "#263843"
+                        color: ShellTheme.color("#263843")
                         Row {
                             anchors.fill: parent
                             anchors.leftMargin: 8
                             anchors.rightMargin: 8
-                            Text { width: 190; text: "Process"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                            Text { width: 55; text: "CPU"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                            Text { width: 55; text: "MEM"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                            Text { width: 70; text: "PID"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                            Text { width: 85; text: "RSS / VSZ"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                            Text { width: 110; text: "User / Time"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                            Text { width: 100; text: "State / TTY\nNice / NI"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                            Text { width: parent.width - 665; text: "Command"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                            Text { width: 190; text: "Process"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                            Text { width: 55; text: "CPU"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                            Text { width: 55; text: "MEM"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                            Text { width: 70; text: "PID"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                            Text { width: 85; text: "RSS / VSZ"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                            Text { width: 110; text: "User / Time"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                            Text { width: 100; text: "State / TTY\nNice / NI"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                            Text { width: parent.width - 665; text: "Command"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
                         }
                     }
 
@@ -167,7 +168,7 @@ LifecycleFloating {
                             required property var modelData
                             width: cpuColumn.width
                             height: 42
-                            color: "#f21d2026"
+                            color: ShellTheme.color("#f21d2026")
                             MouseArea {
                                 anchors.fill: parent
                                 z: 1
@@ -179,14 +180,14 @@ LifecycleFloating {
                                 anchors.fill: parent
                                 anchors.leftMargin: 8
                                 anchors.rightMargin: 8
-                                Text { width: 190; text: modelData.name; color: "#e8edf5"; font.pixelSize: 11; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
-                                Text { width: 55; text: modelData.cpu + "%"; color: "#d8d8d8"; font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
-                                Text { width: 55; text: modelData.memory + "%"; color: "#d8d8d8"; font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
-                                Text { width: 70; text: modelData.pid; color: "#d8d8d8"; font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
-                                Text { width: 85; text: hardwareSource.formatKiB(modelData.rss) + " / " + hardwareSource.formatKiB(modelData.vsz); color: "#d8d8d8"; font.pixelSize: 10; verticalAlignment: Text.AlignVCenter; elide: Text.ElideRight }
-                                Text { width: 110; text: modelData.user + " / " + modelData.elapsed; color: "#d8d8d8"; font.pixelSize: 10; verticalAlignment: Text.AlignVCenter; elide: Text.ElideRight }
-                                Text { width: 100; text: modelData.stat + " / " + modelData.tty + "\nN: " + modelData.nice + " / " + modelData.ni; color: "#d8d8d8"; font.pixelSize: 10; verticalAlignment: Text.AlignVCenter }
-                                Text { width: parent.width - 665; text: modelData.command; color: "#b9c7d1"; font.pixelSize: 10; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
+                                Text { width: 190; text: modelData.name; color: ShellTheme.color("#e8edf5"); font.pixelSize: 11; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
+                                Text { width: 55; text: modelData.cpu + "%"; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
+                                Text { width: 55; text: modelData.memory + "%"; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
+                                Text { width: 70; text: modelData.pid; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
+                                Text { width: 85; text: hardwareSource.formatKiB(modelData.rss) + " / " + hardwareSource.formatKiB(modelData.vsz); color: ShellTheme.color("#d8d8d8"); font.pixelSize: 10; verticalAlignment: Text.AlignVCenter; elide: Text.ElideRight }
+                                Text { width: 110; text: modelData.user + " / " + modelData.elapsed; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 10; verticalAlignment: Text.AlignVCenter; elide: Text.ElideRight }
+                                Text { width: 100; text: modelData.stat + " / " + modelData.tty + "\nN: " + modelData.nice + " / " + modelData.ni; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 10; verticalAlignment: Text.AlignVCenter }
+                                Text { width: parent.width - 665; text: modelData.command; color: ShellTheme.color("#b9c7d1"); font.pixelSize: 10; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
                             }
                         }
                     }
@@ -213,25 +214,25 @@ LifecycleFloating {
                             width: gpuColumn.width
                             spacing: 7
 
-                            Text { text: gpuName(index); color: "#8fb8ff"; font.pixelSize: 15; font.bold: true }
+                            Text { text: gpuName(index); color: ShellTheme.color("#8fb8ff"); font.pixelSize: 15; font.bold: true }
                             Rectangle {
                                 width: parent.width
                                 height: 28
-                                color: "#263843"
+                                color: ShellTheme.color("#263843")
                                 Row {
                                     anchors.fill: parent
                                     anchors.leftMargin: 8
                                     anchors.rightMargin: 8
-                                    Text { width: 120; text: "Process"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                                    Text { width: 55; text: "GPU"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                                    Text { width: 80; text: "VRAM"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                                    Text { width: 50; text: "CPU"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                                    Text { width: 50; text: "MEM"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                                    Text { width: 60; text: "PID"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                                    Text { width: 90; text: "User / Time"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                                    Text { width: 95; text: "RSS / VSZ"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                                    Text { width: 55; text: "State"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                                    Text { width: parent.width - 655; text: "Command"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                                    Text { width: 120; text: "Process"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                                    Text { width: 55; text: "GPU"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                                    Text { width: 80; text: "VRAM"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                                    Text { width: 50; text: "CPU"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                                    Text { width: 50; text: "MEM"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                                    Text { width: 60; text: "PID"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                                    Text { width: 90; text: "User / Time"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                                    Text { width: 95; text: "RSS / VSZ"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                                    Text { width: 55; text: "State"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                                    Text { width: parent.width - 655; text: "Command"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
                                 }
                             }
 
@@ -241,7 +242,7 @@ LifecycleFloating {
                                     required property var modelData
                                     width: gpuColumn.width
                                     height: 42
-                                    color: "#f21d2026"
+                                    color: ShellTheme.color("#f21d2026")
                                     MouseArea {
                                         anchors.fill: parent
                                         z: 1
@@ -253,16 +254,16 @@ LifecycleFloating {
                                         anchors.fill: parent
                                         anchors.leftMargin: 8
                                         anchors.rightMargin: 8
-                                        Text { width: 120; text: modelData.name; color: "#e8edf5"; font.pixelSize: 11; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
-                                        Text { width: 55; text: modelData.gpuLoad === "N/A" ? "N/A" : modelData.gpuLoad + "%"; color: "#d8d8d8"; font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
-                                        Text { width: 80; text: modelData.gpuMemory; color: "#d8d8d8"; font.pixelSize: 10; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
-                                        Text { width: 50; text: modelData.cpu + "%"; color: "#d8d8d8"; font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
-                                        Text { width: 50; text: modelData.memory + "%"; color: "#d8d8d8"; font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
-                                        Text { width: 60; text: modelData.pid; color: "#d8d8d8"; font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
-                                        Text { width: 90; text: modelData.user + " / " + modelData.elapsed; color: "#d8d8d8"; font.pixelSize: 10; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
-                                        Text { width: 95; text: hardwareSource.formatKiB(modelData.rss) + " / " + hardwareSource.formatKiB(modelData.vsz); color: "#d8d8d8"; font.pixelSize: 10; verticalAlignment: Text.AlignVCenter; elide: Text.ElideRight }
-                                        Text { width: 55; text: modelData.stat; color: "#d8d8d8"; font.pixelSize: 10; verticalAlignment: Text.AlignVCenter }
-                                        Text { width: parent.width - 655; text: modelData.command; color: "#b9c7d1"; font.pixelSize: 10; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
+                                        Text { width: 120; text: modelData.name; color: ShellTheme.color("#e8edf5"); font.pixelSize: 11; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
+                                        Text { width: 55; text: modelData.gpuLoad === "N/A" ? "N/A" : modelData.gpuLoad + "%"; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
+                                        Text { width: 80; text: modelData.gpuMemory; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 10; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
+                                        Text { width: 50; text: modelData.cpu + "%"; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
+                                        Text { width: 50; text: modelData.memory + "%"; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
+                                        Text { width: 60; text: modelData.pid; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
+                                        Text { width: 90; text: modelData.user + " / " + modelData.elapsed; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 10; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
+                                        Text { width: 95; text: hardwareSource.formatKiB(modelData.rss) + " / " + hardwareSource.formatKiB(modelData.vsz); color: ShellTheme.color("#d8d8d8"); font.pixelSize: 10; verticalAlignment: Text.AlignVCenter; elide: Text.ElideRight }
+                                        Text { width: 55; text: modelData.stat; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 10; verticalAlignment: Text.AlignVCenter }
+                                        Text { width: parent.width - 655; text: modelData.command; color: ShellTheme.color("#b9c7d1"); font.pixelSize: 10; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
                                     }
                                 }
                             }
@@ -284,25 +285,25 @@ LifecycleFloating {
                     width: parent.width
                     spacing: 9
 
-                    Text { text: "RAM processes"; color: "#8fb8ff"; font.pixelSize: 15; font.bold: true }
-                    Text { text: "Total: " + hardwareSource.memoryUsed + " / " + hardwareSource.memoryTotal + " (" + hardwareSource.memoryPercent + ")"; color: "#aebdca"; font.pixelSize: 12 }
+                    Text { text: "RAM processes"; color: ShellTheme.color("#8fb8ff"); font.pixelSize: 15; font.bold: true }
+                    Text { text: "Total: " + hardwareSource.memoryUsed + " / " + hardwareSource.memoryTotal + " (" + hardwareSource.memoryPercent + ")"; color: ShellTheme.color("#aebdca"); font.pixelSize: 12 }
                     Rectangle {
                         width: parent.width
                         height: 28
-                        color: "#263843"
+                        color: ShellTheme.color("#263843")
                         Row {
                             anchors.fill: parent
                             anchors.leftMargin: 8
                             anchors.rightMargin: 8
-                            Text { width: 175; text: "Process"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                            Text { width: 65; text: "RAM"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                            Text { width: 90; text: "RSS"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                            Text { width: 90; text: "VSZ"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                            Text { width: 55; text: "CPU"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                            Text { width: 70; text: "PID"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                            Text { width: 100; text: "User / Time"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                            Text { width: 85; text: "State"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                            Text { width: parent.width - 730; text: "Command"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                            Text { width: 175; text: "Process"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                            Text { width: 65; text: "RAM"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                            Text { width: 90; text: "RSS"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                            Text { width: 90; text: "VSZ"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                            Text { width: 55; text: "CPU"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                            Text { width: 70; text: "PID"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                            Text { width: 100; text: "User / Time"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                            Text { width: 85; text: "State"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                            Text { width: parent.width - 730; text: "Command"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
                         }
                     }
                     Repeater {
@@ -311,7 +312,7 @@ LifecycleFloating {
                             required property var modelData
                             width: ramColumn.width
                             height: 42
-                            color: "#f21d2026"
+                            color: ShellTheme.color("#f21d2026")
                             MouseArea {
                                 anchors.fill: parent
                                 z: 1
@@ -323,15 +324,15 @@ LifecycleFloating {
                                 anchors.fill: parent
                                 anchors.leftMargin: 8
                                 anchors.rightMargin: 8
-                                Text { width: 175; text: modelData.name; color: "#e8edf5"; font.pixelSize: 11; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
-                                Text { width: 65; text: modelData.memory + "%"; color: "#d8d8d8"; font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
-                                Text { width: 90; text: hardwareSource.formatKiB(modelData.rss); color: "#d8d8d8"; font.pixelSize: 10; verticalAlignment: Text.AlignVCenter }
-                                Text { width: 90; text: hardwareSource.formatKiB(modelData.vsz); color: "#d8d8d8"; font.pixelSize: 10; verticalAlignment: Text.AlignVCenter }
-                                Text { width: 55; text: modelData.cpu + "%"; color: "#d8d8d8"; font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
-                                Text { width: 70; text: modelData.pid; color: "#d8d8d8"; font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
-                                Text { width: 100; text: modelData.user + " / " + modelData.elapsed; color: "#d8d8d8"; font.pixelSize: 10; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
-                                Text { width: 85; text: modelData.stat; color: "#d8d8d8"; font.pixelSize: 10; verticalAlignment: Text.AlignVCenter }
-                                Text { width: parent.width - 730; text: modelData.command; color: "#b9c7d1"; font.pixelSize: 10; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
+                                Text { width: 175; text: modelData.name; color: ShellTheme.color("#e8edf5"); font.pixelSize: 11; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
+                                Text { width: 65; text: modelData.memory + "%"; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
+                                Text { width: 90; text: hardwareSource.formatKiB(modelData.rss); color: ShellTheme.color("#d8d8d8"); font.pixelSize: 10; verticalAlignment: Text.AlignVCenter }
+                                Text { width: 90; text: hardwareSource.formatKiB(modelData.vsz); color: ShellTheme.color("#d8d8d8"); font.pixelSize: 10; verticalAlignment: Text.AlignVCenter }
+                                Text { width: 55; text: modelData.cpu + "%"; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
+                                Text { width: 70; text: modelData.pid; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
+                                Text { width: 100; text: modelData.user + " / " + modelData.elapsed; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 10; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
+                                Text { width: 85; text: modelData.stat; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 10; verticalAlignment: Text.AlignVCenter }
+                                Text { width: parent.width - 730; text: modelData.command; color: ShellTheme.color("#b9c7d1"); font.pixelSize: 10; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
                             }
                         }
                     }
@@ -351,7 +352,7 @@ LifecycleFloating {
                     width: parent.width
                     spacing: 12
 
-                    Text { text: "Storage devices"; color: "#8fb8ff"; font.pixelSize: 15; font.bold: true }
+                    Text { text: "Storage devices"; color: ShellTheme.color("#8fb8ff"); font.pixelSize: 15; font.bold: true }
                     Repeater {
                         model: hardwareSource.storageDevices
                         delegate: Column {
@@ -359,22 +360,22 @@ LifecycleFloating {
                             width: storageColumn.width
                             spacing: 7
 
-                            Text { text: modelData.display + "  (" + modelData.path + ")"; color: "#e8edf5"; font.pixelSize: 14; font.bold: true; elide: Text.ElideRight; width: parent.width }
-                            Text { text: modelData.type + "  |  " + modelData.medium + "  |  " + modelData.size + "  |  " + modelData.transport + "  |  " + modelData.mount + "  |  " + modelData.filesystem; color: "#aebdca"; font.pixelSize: 11; elide: Text.ElideRight; width: parent.width }
+                            Text { text: modelData.display + "  (" + modelData.path + ")"; color: ShellTheme.color("#e8edf5"); font.pixelSize: 14; font.bold: true; elide: Text.ElideRight; width: parent.width }
+                            Text { text: modelData.type + "  |  " + modelData.medium + "  |  " + modelData.size + "  |  " + modelData.transport + "  |  " + modelData.mount + "  |  " + modelData.filesystem; color: ShellTheme.color("#aebdca"); font.pixelSize: 11; elide: Text.ElideRight; width: parent.width }
                             Rectangle {
                                 width: parent.width
                                 height: 28
-                                color: "#263843"
+                                color: ShellTheme.color("#263843")
                                 Row {
                                     anchors.fill: parent
                                     anchors.leftMargin: 8
                                     anchors.rightMargin: 8
-                                    Text { width: 170; text: "Process"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                                    Text { width: 90; text: "Read/s"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                                    Text { width: 90; text: "Write/s"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                                    Text { width: 70; text: "PID"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                                    Text { width: 65; text: "State"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
-                                    Text { width: parent.width - 485; text: "Command"; color: "#bfeaff"; font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                                    Text { width: 170; text: "Process"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                                    Text { width: 90; text: "Read/s"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                                    Text { width: 90; text: "Write/s"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                                    Text { width: 70; text: "PID"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                                    Text { width: 65; text: "State"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
+                                    Text { width: parent.width - 485; text: "Command"; color: ShellTheme.color("#bfeaff"); font.pixelSize: 11; font.bold: true; verticalAlignment: Text.AlignVCenter }
                                 }
                             }
                             Repeater {
@@ -383,7 +384,7 @@ LifecycleFloating {
                                     required property var modelData
                                     width: storageColumn.width
                                     height: 42
-                                    color: "#f21d2026"
+                                    color: ShellTheme.color("#f21d2026")
                                     MouseArea {
                                         anchors.fill: parent
                                         z: 1
@@ -395,12 +396,12 @@ LifecycleFloating {
                                         anchors.fill: parent
                                         anchors.leftMargin: 8
                                         anchors.rightMargin: 8
-                                        Text { width: 170; text: modelData.name; color: "#e8edf5"; font.pixelSize: 11; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
-                                        Text { width: 90; text: modelData.readRate; color: "#d8d8d8"; font.pixelSize: 10; verticalAlignment: Text.AlignVCenter }
-                                        Text { width: 90; text: modelData.writeRate; color: "#d8d8d8"; font.pixelSize: 10; verticalAlignment: Text.AlignVCenter }
-                                        Text { width: 70; text: modelData.pid; color: "#d8d8d8"; font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
-                                        Text { width: 65; text: modelData.state; color: "#d8d8d8"; font.pixelSize: 10; verticalAlignment: Text.AlignVCenter }
-                                        Text { width: parent.width - 485; text: modelData.command; color: "#b9c7d1"; font.pixelSize: 10; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
+                                        Text { width: 170; text: modelData.name; color: ShellTheme.color("#e8edf5"); font.pixelSize: 11; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
+                                        Text { width: 90; text: modelData.readRate; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 10; verticalAlignment: Text.AlignVCenter }
+                                        Text { width: 90; text: modelData.writeRate; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 10; verticalAlignment: Text.AlignVCenter }
+                                        Text { width: 70; text: modelData.pid; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 11; verticalAlignment: Text.AlignVCenter }
+                                        Text { width: 65; text: modelData.state; color: ShellTheme.color("#d8d8d8"); font.pixelSize: 10; verticalAlignment: Text.AlignVCenter }
+                                        Text { width: parent.width - 485; text: modelData.command; color: ShellTheme.color("#b9c7d1"); font.pixelSize: 10; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
                                     }
                                 }
                             }
@@ -416,7 +417,7 @@ LifecycleFloating {
         anchors.fill: parent
         visible: detailsPopup.terminationConfirmationVisible
         z: 200
-        color: "#c9000000"
+        color: ShellTheme.color("#c9000000")
         MouseArea { anchors.fill: parent }
 
         Rectangle {
@@ -424,8 +425,8 @@ LifecycleFloating {
             height: 250
             anchors.centerIn: parent
             radius: 10
-            color: "#f21d2026"
-            border.color: "#d36a6a"
+            color: ShellTheme.color("#f21d2026")
+            border.color: ShellTheme.color("#d36a6a")
             border.width: 1
 
             Column {
@@ -435,7 +436,7 @@ LifecycleFloating {
 
                 Text {
                     text: "Terminate process?"
-                    color: "#ffb4b4"
+                    color: ShellTheme.color("#ffb4b4")
                     font.pixelSize: 20
                     font.bold: true
                 }
@@ -444,7 +445,7 @@ LifecycleFloating {
                     text: detailsPopup.selectedProcess
                         ? detailsPopup.selectedProcess.name + "  (PID " + detailsPopup.selectedProcess.pid + ")"
                         : "No process selected"
-                    color: "#e8edf5"
+                    color: ShellTheme.color("#e8edf5")
                     font.pixelSize: 15
                     font.bold: true
                     elide: Text.ElideRight
@@ -454,7 +455,7 @@ LifecycleFloating {
                     text: detailsPopup.terminationStatus.length > 0
                         ? detailsPopup.terminationStatus
                         : "This sends SIGTERM, allowing the process to exit cleanly. The PID and process name are rechecked immediately before signaling."
-                    color: detailsPopup.terminationStatus.length > 0 ? "#c6e48b" : "#aebdca"
+                    color: detailsPopup.terminationStatus.length > 0 ? ShellTheme.color("#c6e48b") : ShellTheme.color("#aebdca")
                     font.pixelSize: 13
                     wrapMode: Text.Wrap
                 }
@@ -468,9 +469,9 @@ LifecycleFloating {
                         height: 38
                         radius: 6
                         visible: detailsPopup.terminationStatus.length === 0
-                        color: detailsPopup.terminationInProgress ? "#4b3030" : (killMouse.containsMouse ? "#8b3434" : "#6d2828")
-                        border.color: "#ee8c8c"
-                        Text { anchors.centerIn: parent; text: detailsPopup.terminationInProgress ? "Terminating…" : "Kill (SIGTERM)"; color: "#ffffff"; font.pixelSize: 13; font.bold: true }
+                        color: detailsPopup.terminationInProgress ? ShellTheme.color("#4b3030") : (killMouse.containsMouse ? ShellTheme.color("#8b3434") : ShellTheme.color("#6d2828"))
+                        border.color: ShellTheme.color("#ee8c8c")
+                        Text { anchors.centerIn: parent; text: detailsPopup.terminationInProgress ? "Terminating…" : "Kill (SIGTERM)"; color: ShellTheme.color("#ffffff"); font.pixelSize: 13; font.bold: true }
                         MouseArea {
                             id: killMouse
                             anchors.fill: parent
@@ -484,9 +485,9 @@ LifecycleFloating {
                         width: 100
                         height: 38
                         radius: 6
-                        color: cancelMouse.containsMouse ? "#39424e" : "#2b323b"
-                        border.color: "#7188aa"
-                        Text { anchors.centerIn: parent; text: detailsPopup.terminationStatus.length > 0 ? "Close" : "Cancel"; color: "#e8edf5"; font.pixelSize: 13; font.bold: true }
+                        color: cancelMouse.containsMouse ? ShellTheme.color("#39424e") : ShellTheme.color("#2b323b")
+                        border.color: ShellTheme.color("#7188aa")
+                        Text { anchors.centerIn: parent; text: detailsPopup.terminationStatus.length > 0 ? "Close" : "Cancel"; color: ShellTheme.color("#e8edf5"); font.pixelSize: 13; font.bold: true }
                         MouseArea {
                             id: cancelMouse
                             anchors.fill: parent

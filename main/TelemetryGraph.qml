@@ -1,4 +1,5 @@
 import QtQuick
+import "ShellTheme.js" as ShellTheme
 
 Canvas {
     id: graph
@@ -7,10 +8,10 @@ Canvas {
     property bool active: false
     property real maximum: 100
     property string unit: "%"
-    property color strokeColor: "#8fb8ff"
-    property color fillColor: "#338fb8ff"
-    property color axisColor: "#777777"
-    property color labelColor: "#aaaaaa"
+    property color strokeColor: ShellTheme.color("#8fb8ff")
+    property color fillColor: ShellTheme.color("#338fb8ff")
+    property color axisColor: ShellTheme.color("#777777")
+    property color labelColor: ShellTheme.color("#aaaaaa")
 
     implicitWidth: 330
     implicitHeight: 108
@@ -27,7 +28,7 @@ Canvas {
     onPaint: {
         const ctx = getContext("2d")
         ctx.clearRect(0, 0, width, height)
-        ctx.fillStyle = "#24101010"
+        ctx.fillStyle = ShellTheme.color("#24101010")
         ctx.fillRect(0, 0, width, height)
 
         const left = 38
@@ -54,7 +55,7 @@ Canvas {
         ctx.lineTo(left + plotWidth, top + plotHeight)
         ctx.stroke()
 
-        ctx.strokeStyle = "#383838"
+        ctx.strokeStyle = ShellTheme.color("#383838")
         ctx.beginPath()
         ctx.moveTo(left, top + plotHeight / 2)
         ctx.lineTo(left + plotWidth, top + plotHeight / 2)

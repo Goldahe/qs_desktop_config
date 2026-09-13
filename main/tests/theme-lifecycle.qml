@@ -9,6 +9,12 @@ ShellRoot {
         outputScreen: null
         // Acceptance exercises resident routing without invoking live effects.
         function applyChanges() { test.applied++ }
+        function applyGlobalWallpaper(sourceFile, statePath) {
+            pendingSource = sourceFile
+            State.wallpaperSource = statePath
+            previewRevision++
+            test.applied++
+        }
     }
     property int step: 0
     property var dialog: null
@@ -62,13 +68,13 @@ ShellRoot {
                     check(dialog.visible, "picker actually visible")
                     theme.closePicker(null)
                     check(theme.pickerActive, "stale destroyed picker callback cannot close current picker")
-                    dialog.reject()
+                    dialog.visible = false
                 } else if (step === 3) {
                     check(!theme.pickerActive, "rejection disposes picker")
                     check(theme.menuOpen, "rejection keeps menu")
                     dialog = theme.openPicker()
                 } else if (step === 4) {
-                    dialog.close()
+                    dialog.visible = false
                 } else if (step === 5) {
                     check(!theme.pickerActive, "plain close disposes picker")
                     dialog = theme.openPicker()
@@ -80,9 +86,8 @@ ShellRoot {
                     dialog = theme.openPicker()
                 } else if (step === 8) {
                     dialog.selectedFile = Qt.resolvedUrl("test-artwork.svg")
-                    // Native accept() reads its own UI selection; inject only
-                    // the acceptance signal to test the real resident handler.
-                    dialog.accepted()
+                    theme.acceptArtwork(dialog.selectedFile)
+                    dialog.visible = false
                 } else if (step === 9) {
                     check(!theme.pickerActive, "acceptance disposes picker")
                     check(theme.pendingSource === Qt.resolvedUrl("test-artwork.svg").toString(), "accepted source resident")

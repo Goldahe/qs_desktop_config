@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Widgets
+import "ShellTheme.js" as ShellTheme
 
 Rectangle {
     id: overclockToggle
@@ -12,7 +13,7 @@ Rectangle {
     height: 28
     radius: 5
     color: mouse.containsMouse
-        ? (overclocked ? "#593536" : "#304f38")
+        ? (overclocked ? ShellTheme.color("#593536") : ShellTheme.color("#304f38"))
         : "transparent"
     opacity: busy ? 0.65 : 1.0
 

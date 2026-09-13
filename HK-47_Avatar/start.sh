@@ -2,6 +2,17 @@
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 
+runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+if [[ -f "$runtime_dir/quickshell-display-mode" ]] && [[ $(<"$runtime_dir/quickshell-display-mode") == game ]]; then
+    exit 0
+fi
+if [[ -f "$runtime_dir/quickshell-avatar-enabled" ]]; then
+    [[ $(<"$runtime_dir/quickshell-avatar-enabled") == 0 ]] && exit 0
+elif [[ -f "$HOME/.config/quickshell/main/ThemeControlState.js" ]] &&
+     grep -Eq '^var avatarEnabled[[:space:]]*=[[:space:]]*false[[:space:]]*$' "$HOME/.config/quickshell/main/ThemeControlState.js"; then
+    exit 0
+fi
+
 # Compile Qt shader binaries from the tracked shader sources when they are
 # missing or stale. Keep the generated files out of Git while making this
 # profile self-contained when launched on a fresh checkout.

@@ -1,0 +1,26 @@
+# Local/editor and Python cache
+**/__pycache__/
+*.pyc
+*.pyo
+*.swp
+*.swo
+
+# Disposable backups and generated evidence
+*.bak*
+**/backups/
+wallpaper-backup-*/
+**/verification/
+*.log
+*.png
+*.tmp
+*.new
+
+# Local LLM profile state contains machine-specific model paths
+main/llm-custom-state.json
+
+# Locally built runtime artifacts
+wallpaper-spectrum/fft-spectrum
+*.moc
+*.o
+*.so
+**/*.qsb

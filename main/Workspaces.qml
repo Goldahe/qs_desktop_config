@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell.Hyprland
+import "ShellTheme.js" as ShellTheme
 
 Row {
     anchors.left: parent.left
@@ -19,13 +20,13 @@ Row {
             width: label.implicitWidth + 16
             height: 28
             radius: 5
-            color: isFocused ? "#3a3a3a" : "transparent"
+            color: isFocused ? ShellTheme.color("#3a3a3a") : "transparent"
 
             Text {
                 id: label
                 anchors.centerIn: parent
                 text: modelData.name
-                color: isFocused ? "white" : "#858585"
+                color: isFocused ? ShellTheme.color("#ffffff") : ShellTheme.color("#858585")
                 font.pixelSize: 14
                 font.bold: isFocused
             }

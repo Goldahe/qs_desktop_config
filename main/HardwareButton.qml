@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import "ShellTheme.js" as ShellTheme
 
 Rectangle {
     property var barWindow
@@ -7,12 +8,12 @@ Rectangle {
     width: 30
     height: 28
     radius: 5
-    color: hardwareMouse.containsMouse ? "#454545" : "transparent"
+    color: hardwareMouse.containsMouse ? ShellTheme.color("#454545") : "transparent"
 
     Text {
         anchors.centerIn: parent
         text: "󰍛"
-        color: "white"
+        color: ShellTheme.color("#ffffff")
         font.family: "Symbols Nerd Font"
         font.pixelSize: 16
     }

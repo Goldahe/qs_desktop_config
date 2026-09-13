@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "ShellTheme.js" as ShellTheme
 
 Rectangle {
     id: chatterboxButton
@@ -16,7 +17,7 @@ Rectangle {
     height: 28
     radius: 5
     color: chatterboxMouse.containsMouse
-        ? (serverRunning ? "#304f38" : "#454545")
+        ? (serverRunning ? ShellTheme.color("#304f38") : ShellTheme.color("#454545"))
         : "transparent"
 
     Process {
@@ -67,7 +68,7 @@ Rectangle {
     Text {
         anchors.centerIn: parent
         text: "󰍬"
-        color: serverRunning ? "#9be9a8" : "#858585"
+        color: serverRunning ? ShellTheme.color("#9be9a8") : ShellTheme.color("#858585")
         font.family: "Symbols Nerd Font"
         font.pixelSize: 17
     }

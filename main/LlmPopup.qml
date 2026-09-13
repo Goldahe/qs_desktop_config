@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
+import "ShellTheme.js" as ShellTheme
 
 LifecyclePopup {
     id: llmPopup
@@ -417,20 +418,20 @@ LifecyclePopup {
             leftPadding: 10
             rightPadding: combo.indicator.width + 10
             text: combo.currentText || "No options found"
-            color: "#e4f5ff"
+            color: ShellTheme.color("#e4f5ff")
             elide: Text.ElideMiddle
             verticalAlignment: Text.AlignVCenter
         }
         background: Rectangle {
             radius: 5
-            color: combo.popup.visible ? "#36586b" : "#263843"
-            border.color: "#668faabd"
+            color: combo.popup.visible ? ShellTheme.color("#36586b") : ShellTheme.color("#263843")
+            border.color: ShellTheme.color("#668faabd")
         }
         indicator: Text {
             x: combo.width - width - 10
             y: (combo.height - height) / 2
             text: combo.popup.visible ? "▲" : "▼"
-            color: "#bfeaff"
+            color: ShellTheme.color("#bfeaff")
             font.pixelSize: 10
         }
         popup: Popup {
@@ -460,8 +461,8 @@ LifecyclePopup {
             }
             background: Rectangle {
                 radius: 5
-                color: "#18242c"
-                border.color: "#668faabd"
+                color: ShellTheme.color("#18242c")
+                border.color: ShellTheme.color("#668faabd")
             }
         }
     }
@@ -470,13 +471,13 @@ LifecyclePopup {
         id: action
         property string label: ""
         property bool active: true
-        property color normalColor: "#2f513d"
+        property color normalColor: ShellTheme.color("#2f513d")
         signal clicked()
         height: 34
         radius: 5
-        color: !active ? "#252b30" : (actionMouse.containsMouse ? Qt.lighter(normalColor, 1.18) : normalColor)
+        color: !active ? ShellTheme.color("#252b30") : (actionMouse.containsMouse ? Qt.lighter(normalColor, 1.18) : normalColor)
         opacity: active ? 1 : 0.45
-        Text { anchors.centerIn: parent; text: action.label; color: action.active ? "#d9f4e0" : "#7f8a90"; font.bold: true; font.pixelSize: 12 }
+        Text { anchors.centerIn: parent; text: action.label; color: action.active ? ShellTheme.color("#d9f4e0") : ShellTheme.color("#7f8a90"); font.bold: true; font.pixelSize: 12 }
         MouseArea {
             id: actionMouse
             anchors.fill: parent
@@ -533,15 +534,15 @@ LifecyclePopup {
                     width: 86
                     height: 32
                     text: String(llmPopup.customValues[editor.optionData.key] ?? editor.optionData.default ?? "")
-                    color: "#e4f5ff"
+                    color: ShellTheme.color("#e4f5ff")
                     font.pixelSize: 12
                     selectByMouse: true
                     horizontalAlignment: Text.AlignRight
                     onEditingFinished: llmPopup.setCustomValue(editor.optionData.key, text)
                     background: Rectangle {
                         radius: 5
-                        color: "#263843"
-                        border.color: parent.activeFocus ? "#8fcdf0" : "#668faabd"
+                        color: ShellTheme.color("#263843")
+                        border.color: parent.activeFocus ? ShellTheme.color("#8fcdf0") : ShellTheme.color("#668faabd")
                     }
                 }
             }
@@ -550,15 +551,15 @@ LifecyclePopup {
             id: textEditor
             TextField {
                 text: String(llmPopup.customValues[editor.optionData.key] ?? editor.optionData.default ?? "")
-                color: "#e4f5ff"
+                color: ShellTheme.color("#e4f5ff")
                 font.pixelSize: 12
                 selectByMouse: true
                 placeholderText: editor.optionData.help || "Optional value"
                 onEditingFinished: llmPopup.setCustomValue(editor.optionData.key, text)
                 background: Rectangle {
                     radius: 5
-                    color: "#263843"
-                    border.color: parent.activeFocus ? "#8fcdf0" : "#668faabd"
+                    color: ShellTheme.color("#263843")
+                    border.color: parent.activeFocus ? ShellTheme.color("#8fcdf0") : ShellTheme.color("#668faabd")
                 }
             }
         }
@@ -567,8 +568,8 @@ LifecyclePopup {
     Rectangle {
         anchors.fill: parent
         radius: 8
-        color: "#f0262626"
-        border.color: "#555555"
+        color: ShellTheme.color("#f0262626")
+        border.color: ShellTheme.color("#555555")
         border.width: 1
 
         Column {
@@ -580,7 +581,7 @@ LifecyclePopup {
                 width: parent.width
                 height: 24
                 text: "󰚩  Llama Server"
-                color: "#bfeaff"
+                color: ShellTheme.color("#bfeaff")
                 font.family: "Symbols Nerd Font"
                 font.bold: true
                 font.pixelSize: 15
@@ -599,9 +600,9 @@ LifecyclePopup {
                         width: (parent.width - 6) / 2
                         height: 34
                         radius: 5
-                        color: llmPopup.selectedTab === index ? "#36586b" : (tabMouse.containsMouse ? "#2f4654" : "#202f38")
-                        border.color: llmPopup.selectedTab === index ? "#8fcdf0" : "#4f6570"
-                        Text { anchors.centerIn: parent; text: modelData; color: llmPopup.selectedTab === index ? "#dff6ff" : "#94a9b5"; font.bold: true; font.pixelSize: 12 }
+                        color: llmPopup.selectedTab === index ? ShellTheme.color("#36586b") : (tabMouse.containsMouse ? ShellTheme.color("#2f4654") : ShellTheme.color("#202f38"))
+                        border.color: llmPopup.selectedTab === index ? ShellTheme.color("#8fcdf0") : ShellTheme.color("#4f6570")
+                        Text { anchors.centerIn: parent; text: modelData; color: llmPopup.selectedTab === index ? ShellTheme.color("#dff6ff") : ShellTheme.color("#94a9b5"); font.bold: true; font.pixelSize: 12 }
                         MouseArea {
                             id: tabMouse
                             anchors.fill: parent
@@ -618,8 +619,8 @@ LifecyclePopup {
                 width: parent.width
                 height: 82
                 radius: 6
-                color: "#1d3039"
-                border.color: llmPopup.resourceEstimate.totalMiB !== undefined ? "#58829a" : "#41525c"
+                color: ShellTheme.color("#1d3039")
+                border.color: llmPopup.resourceEstimate.totalMiB !== undefined ? ShellTheme.color("#58829a") : ShellTheme.color("#41525c")
 
                 Text {
                     anchors.left: parent.left
@@ -627,7 +628,7 @@ LifecyclePopup {
                     anchors.top: parent.top
                     anchors.topMargin: 7
                     text: "Estimated allocation"
-                    color: "#a9d8ea"
+                    color: ShellTheme.color("#a9d8ea")
                     font.bold: true
                     font.pixelSize: 11
                 }
@@ -637,7 +638,7 @@ LifecyclePopup {
                     anchors.top: parent.top
                     anchors.topMargin: 7
                     text: estimateProcess.running ? "calculating..." : "llama.cpp fit estimator"
-                    color: "#7693a2"
+                    color: ShellTheme.color("#7693a2")
                     font.pixelSize: 9
                 }
                 Text {
@@ -652,7 +653,7 @@ LifecyclePopup {
                            "   •   RAM " + llmPopup.formatMemory(llmPopup.resourceEstimate.ramMiB) +
                            "   •   VRAM " + llmPopup.formatMemory(llmPopup.resourceEstimate.vramMiB)) :
                           llmPopup.estimateStatus
-                    color: llmPopup.resourceEstimate.totalMiB !== undefined ? "#d9f4e0" : "#c8ab84"
+                    color: llmPopup.resourceEstimate.totalMiB !== undefined ? ShellTheme.color("#d9f4e0") : ShellTheme.color("#c8ab84")
                     font.bold: llmPopup.resourceEstimate.totalMiB !== undefined
                     font.pixelSize: 12
                     elide: Text.ElideRight
@@ -668,7 +669,7 @@ LifecyclePopup {
                     text: "Weights " + llmPopup.formatMemory(llmPopup.resourceEstimate.modelMiB) +
                           "   •   Context/KV " + llmPopup.formatMemory(llmPopup.resourceEstimate.contextMiB) +
                           "   •   Compute " + llmPopup.formatMemory(llmPopup.resourceEstimate.computeMiB)
-                    color: "#aabfc9"
+                    color: ShellTheme.color("#aabfc9")
                     font.pixelSize: 10
                     elide: Text.ElideRight
                 }
@@ -681,7 +682,7 @@ LifecyclePopup {
                     anchors.bottom: parent.bottom
                     anchors.bottomMargin: 5
                     text: llmPopup.estimateStatus
-                    color: "#718b98"
+                    color: ShellTheme.color("#718b98")
                     font.pixelSize: 8
                     elide: Text.ElideRight
                 }
@@ -696,7 +697,7 @@ LifecyclePopup {
                     anchors.fill: parent
                     spacing: 9
 
-                    Text { text: "Script"; color: "#8da7b7"; font.pixelSize: 11 }
+                    Text { text: "Script"; color: ShellTheme.color("#8da7b7"); font.pixelSize: 11 }
                     SelectorCombo {
                         id: scriptCombo
                         model: llmPopup.scripts
@@ -704,7 +705,7 @@ LifecyclePopup {
                         onOptionSelected: llmPopup.selectedScript = value
                     }
 
-                    Text { text: "Model"; color: "#8da7b7"; font.pixelSize: 11 }
+                    Text { text: "Model"; color: ShellTheme.color("#8da7b7"); font.pixelSize: 11 }
                     SelectorCombo {
                         id: quickModelCombo
                         model: llmPopup.models
@@ -719,12 +720,12 @@ LifecyclePopup {
                         width: parent.width
                         height: 60
                         radius: 5
-                        color: "#202c33"
+                        color: ShellTheme.color("#202c33")
                         Text {
                             anchors.fill: parent
                             anchors.margins: 9
                             text: "Quick Start preserves the existing script profiles and their tuned AMD ROCm settings."
-                            color: "#9fb2bd"
+                            color: ShellTheme.color("#9fb2bd")
                             font.pixelSize: 11
                             wrapMode: Text.WordWrap
                         }
@@ -733,12 +734,12 @@ LifecyclePopup {
                     Item { width: 1; height: 3 }
                     Text {
                         text: llmPopup.effectiveLaunchUrl()
-                        color: "#8fb8ff"
+                        color: ShellTheme.color("#8fb8ff")
                         font.pixelSize: 12
                         font.underline: true
                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: llmPopup.openUi() }
                     }
-                    Text { width: parent.width; text: llmPopup.processStatus; color: "#9fb2bd"; font.pixelSize: 11; elide: Text.ElideRight }
+                    Text { width: parent.width; text: llmPopup.processStatus; color: ShellTheme.color("#9fb2bd"); font.pixelSize: 11; elide: Text.ElideRight }
                     Item { width: 1; height: 1 }
                     Row {
                         width: parent.width
@@ -753,7 +754,7 @@ LifecyclePopup {
                             width: (parent.width - 10) / 2
                             label: "Stop"
                             active: llamaProcess.running
-                            normalColor: "#533636"
+                            normalColor: ShellTheme.color("#533636")
                             onClicked: llmPopup.stopLlama()
                         }
                     }
@@ -764,7 +765,7 @@ LifecyclePopup {
                     anchors.fill: parent
                     spacing: 7
 
-                    Text { text: "GGUF model"; color: "#8da7b7"; font.pixelSize: 11 }
+                    Text { text: "GGUF model"; color: ShellTheme.color("#8da7b7"); font.pixelSize: 11 }
                     SelectorCombo {
                         id: customModelCombo
                         model: llmPopup.models
@@ -779,12 +780,12 @@ LifecyclePopup {
                         width: parent.width
                         height: 44
                         radius: 5
-                        color: "#202c33"
+                        color: ShellTheme.color("#202c33")
                         Text {
                             anchors.fill: parent
                             anchors.margins: 8
                             text: llmPopup.inspectionStatus
-                            color: llmPopup.modelInspection.model && llmPopup.modelInspection.model.serverCompatible ? "#b9e7c5" : "#d6b58a"
+                            color: llmPopup.modelInspection.model && llmPopup.modelInspection.model.serverCompatible ? ShellTheme.color("#b9e7c5") : ShellTheme.color("#d6b58a")
                             font.pixelSize: 11
                             wrapMode: Text.WordWrap
                             elide: Text.ElideRight
@@ -806,7 +807,7 @@ LifecyclePopup {
                             width: (parent.width - 14) / 3
                             height: 30
                             label: "Clear overrides"
-                            normalColor: "#3c4850"
+                            normalColor: ShellTheme.color("#3c4850")
                             active: !!llmPopup.modelInspection.model
                             onClicked: llmPopup.clearOverrides()
                         }
@@ -814,7 +815,7 @@ LifecyclePopup {
                             width: (parent.width - 14) / 3
                             height: 30
                             label: "Reinspect GGUF"
-                            normalColor: "#3c4850"
+                            normalColor: ShellTheme.color("#3c4850")
                             active: !inspectorProcess.running && !!llmPopup.selectedModel
                             onClicked: llmPopup.requestInspection()
                         }
@@ -841,21 +842,21 @@ LifecyclePopup {
                                     width: parent.width
                                     height: header.height + (expanded ? optionsColumn.implicitHeight + 12 : 0)
                                     radius: 6
-                                    color: "#202c33"
-                                    border.color: expanded ? "#668faabd" : "#41525c"
+                                    color: ShellTheme.color("#202c33")
+                                    border.color: expanded ? ShellTheme.color("#668faabd") : ShellTheme.color("#41525c")
 
                                     Rectangle {
                                         id: header
                                         width: parent.width
                                         height: 38
                                         radius: 6
-                                        color: headerMouse.containsMouse ? "#2b414d" : "#24343d"
+                                        color: headerMouse.containsMouse ? ShellTheme.color("#2b414d") : ShellTheme.color("#24343d")
                                         Text {
                                             anchors.left: parent.left
                                             anchors.leftMargin: 10
                                             anchors.verticalCenter: parent.verticalCenter
                                             text: (sectionCard.expanded ? "▼  " : "▶  ") + sectionCard.modelData.name
-                                            color: "#c6e9f7"
+                                            color: ShellTheme.color("#c6e9f7")
                                             font.bold: true
                                             font.pixelSize: 12
                                         }
@@ -864,7 +865,7 @@ LifecyclePopup {
                                             anchors.rightMargin: 10
                                             anchors.verticalCenter: parent.verticalCenter
                                             text: (sectionCard.modelData.options || []).length + " options"
-                                            color: "#7993a1"
+                                            color: ShellTheme.color("#7993a1")
                                             font.pixelSize: 10
                                         }
                                         MouseArea {
@@ -890,7 +891,7 @@ LifecyclePopup {
                                             visible: !!sectionCard.modelData.note
                                             width: parent.width
                                             text: sectionCard.modelData.note || ""
-                                            color: sectionCard.modelData.name.indexOf("Dangerous") >= 0 ? "#f0b28f" : "#8fa5b0"
+                                            color: sectionCard.modelData.name.indexOf("Dangerous") >= 0 ? ShellTheme.color("#f0b28f") : ShellTheme.color("#8fa5b0")
                                             font.pixelSize: 10
                                             wrapMode: Text.WordWrap
                                         }
@@ -902,7 +903,7 @@ LifecyclePopup {
                                                 width: parent.width
                                                 height: 38
                                                 radius: 4
-                                                color: llmPopup.customEnabled[modelData.key] ? "#293d48" : "#1b272e"
+                                                color: llmPopup.customEnabled[modelData.key] ? ShellTheme.color("#293d48") : ShellTheme.color("#1b272e")
 
                                                 Rectangle {
                                                     id: overrideBox
@@ -912,9 +913,9 @@ LifecyclePopup {
                                                     width: 18
                                                     height: 18
                                                     radius: 3
-                                                    color: llmPopup.customEnabled[modelData.key] ? "#4d89a5" : "#172027"
-                                                    border.color: "#7398aa"
-                                                    Text { anchors.centerIn: parent; text: llmPopup.customEnabled[modelData.key] ? "✓" : ""; color: "white"; font.pixelSize: 12 }
+                                                    color: llmPopup.customEnabled[modelData.key] ? ShellTheme.color("#4d89a5") : ShellTheme.color("#172027")
+                                                    border.color: ShellTheme.color("#7398aa")
+                                                    Text { anchors.centerIn: parent; text: llmPopup.customEnabled[modelData.key] ? "✓" : ""; color: ShellTheme.color("#ffffff"); font.pixelSize: 12 }
                                                     MouseArea {
                                                         anchors.fill: parent
                                                         cursorShape: Qt.PointingHandCursor
@@ -928,7 +929,7 @@ LifecyclePopup {
                                                     anchors.verticalCenter: parent.verticalCenter
                                                     width: Math.max(180, parent.width * 0.38)
                                                     text: modelData.label
-                                                    color: llmPopup.customEnabled[modelData.key] ? "#d2e8f2" : "#8296a0"
+                                                    color: llmPopup.customEnabled[modelData.key] ? ShellTheme.color("#d2e8f2") : ShellTheme.color("#8296a0")
                                                     font.pixelSize: 11
                                                     elide: Text.ElideRight
                                                 }
@@ -953,7 +954,7 @@ LifecyclePopup {
                     Text {
                         width: parent.width
                         text: llmPopup.processStatus
-                        color: "#9fb2bd"
+                        color: ShellTheme.color("#9fb2bd")
                         font.pixelSize: 10
                         elide: Text.ElideRight
                     }
@@ -971,13 +972,13 @@ LifecyclePopup {
                             width: (parent.width - 16) * 0.28
                             label: "Stop"
                             active: llamaProcess.running
-                            normalColor: "#533636"
+                            normalColor: ShellTheme.color("#533636")
                             onClicked: llmPopup.stopLlama()
                         }
                         ActionButton {
                             width: (parent.width - 16) * 0.28
                             label: "Open UI"
-                            normalColor: "#3c4850"
+                            normalColor: ShellTheme.color("#3c4850")
                             active: llmPopup.effectiveLaunchUrl().startsWith("http")
                             onClicked: llmPopup.openUi()
                         }

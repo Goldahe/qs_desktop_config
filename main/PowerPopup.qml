@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import "ShellTheme.js" as ShellTheme
 
 LifecyclePopup {
     property var barWindow
@@ -17,8 +18,8 @@ LifecyclePopup {
     Rectangle {
         anchors.fill: parent
         radius: 8
-        color: "#f0262626"
-        border.color: "#555555"
+        color: ShellTheme.color("#f0262626")
+        border.color: ShellTheme.color("#555555")
         border.width: 1
 
         Column {
@@ -38,14 +39,14 @@ LifecyclePopup {
                     width: parent.width
                     height: 38
                     radius: 5
-                    color: actionMouse.containsMouse ? "#454545" : "transparent"
+                    color: actionMouse.containsMouse ? ShellTheme.color("#454545") : "transparent"
 
                     Text {
                         anchors.left: parent.left
                         anchors.leftMargin: 10
                         anchors.verticalCenter: parent.verticalCenter
                         text: modelData.label
-                        color: "white"
+                        color: ShellTheme.color("#ffffff")
                         font.family: "Symbols Nerd Font"
                         font.pixelSize: 14
                     }

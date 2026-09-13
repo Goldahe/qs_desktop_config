@@ -2,8 +2,10 @@ import QtQuick
 import QtQuick.Controls
 import Qt.labs.folderlistmodel
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 import "ThemeControlState.js" as State
+import "ShellTheme.js" as ShellTheme
 
 PanelWindow {
     id: root
@@ -26,6 +28,15 @@ PanelWindow {
     property bool barsEnabled: State.barsEnabled
     property bool wallpaperEnabled: State.wallpaperEnabled
     property bool avatarEnabled: State.avatarEnabled
+    property var availableThemes: []
+    property string pendingTheme: State.selectedTheme
+    property string themeLoadError: ""
+    property bool operationInProgress: false
+    property string operationStatus: ""
+    property string operationError: ""
+    property string operationOutput: ""
+    property string operationKind: ""
+    property var operationPayload: ({})
     readonly property bool menuOpen: menuSlot.item !== null
     property int previewsCreated: 0
     property int previewsDestroyed: 0
@@ -40,18 +51,20 @@ PanelWindow {
 
     function expandHome(path) {
         const value = String(path || "")
-        return value.indexOf("$HOME") === 0 ? root.homeDir + value.substring(5) : value
+        return value === "$HOME" || value.indexOf("$HOME/") === 0 ? root.homeDir + value.substring(5) : value
     }
 
     // The coordinator can distinguish a native picker from its owning menu.
     // Closing the menu always closes both; closing just the picker keeps edits.
     function openPicker() {
+        if (root.operationInProgress) return null
         if (pickerItem) return pickerItem
         pickerScreenName = ""
         return createPicker()
     }
 
     function openScreenPicker(screenName) {
+        if (root.operationInProgress) return null
         if (pickerItem) return pickerItem
         pickerScreenName = screenName
         return createPicker()
@@ -81,28 +94,30 @@ PanelWindow {
     }
     function portableStatePath(source) {
         let value = String(source || "").replace(/^file:\/\//, "")
-        return value.indexOf(root.homeDir) === 0 ? "$HOME" + value.substring(root.homeDir.length) : value
+        return value === root.homeDir || value.indexOf(root.homeDir + "/") === 0 ? "$HOME" + value.substring(root.homeDir.length) : value
     }
 
     function acceptArtwork(source) {
         const selected = source.toString()
         const statePath = root.portableStatePath(selected)
         if (root.pickerScreenName !== "") {
-            State.perScreenWallpapers[root.pickerScreenName] = statePath
-            root.applyScreenWallpaper(root.pickerScreenName, selected)
+            root.applyScreenWallpaper(root.pickerScreenName, selected, statePath)
         } else {
-            State.wallpaperSource = statePath
-            root.pendingSource = selected
-            root.applyChanges()
+            root.applyGlobalWallpaper(selected, statePath)
         }
-        // Force existing Image bindings to reevaluate immediately. The helper
-        // persists the same value to disk, while this keeps the open popup live.
-        root.previewRevision++
         root.pickerScreenName = ""
     }
 
     function openMenu() { return menuSlot.open() }
     function closeMenu() { return menuSlot.close() }
+    function openThemeChoices() {
+        const menu = openMenu()
+        if (!menu) return
+        Qt.callLater(function() {
+            if (menu && menu.visible)
+                menu.showThemeChoices()
+        })
+    }
     function lifecycleSnapshot() {
         return {
             menu: menuSlot.snapshot(),
@@ -114,11 +129,117 @@ PanelWindow {
 
     LifecycleSlot { id: menuSlot; name: "theme"; factory: menuFactory }
 
+    Process {
+        id: themeListProcess
+        command: ["python", root.controller, "--list-json"]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const parsed = JSON.parse(this.text)
+                    root.availableThemes = Array.isArray(parsed) ? parsed : []
+                    root.themeLoadError = root.availableThemes.length > 0 ? "" : "No valid themes found"
+                } catch (error) {
+                    root.availableThemes = []
+                    root.themeLoadError = "Theme catalog unreadable"
+                }
+            }
+        }
+        stderr: StdioCollector {}
+        onExited: function(exitCode) {
+            if (exitCode !== 0)
+                root.themeLoadError = "Theme catalog command failed"
+        }
+    }
+
+    Process {
+        id: themeApplyProcess
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: root.operationOutput = this.text.trim()
+        }
+        stderr: StdioCollector {
+            onStreamFinished: root.operationError = this.text.trim()
+        }
+        onExited: function(exitCode) {
+            root.operationInProgress = false
+            if (exitCode === 0) {
+                root.operationStatus = "Theme operation complete"
+                root.operationError = ""
+                if (root.operationKind === "custom") {
+                    State.selectedTheme = "custom"
+                    State.barsEnabled = root.barsEnabled
+                    State.wallpaperEnabled = root.wallpaperEnabled
+                    State.avatarEnabled = root.avatarEnabled
+                    if (root.operationPayload.type === "global") {
+                        State.wallpaperSource = root.operationPayload.path
+                        root.pendingSource = root.operationPayload.source
+                        root.previewRevision++
+                    } else if (root.operationPayload.type === "screen") {
+                        State.perScreenWallpapers[root.operationPayload.screen] = root.operationPayload.path
+                        root.previewRevision++
+                    }
+                    root.pendingTheme = "custom"
+                } else if (root.operationKind === "theme") {
+                    Quickshell.reload(true)
+                }
+            } else {
+                root.operationStatus = ""
+                root.barsEnabled = State.barsEnabled
+                root.wallpaperEnabled = State.wallpaperEnabled
+                root.avatarEnabled = State.avatarEnabled
+                root.pendingSource = "file://" + root.expandHome(State.wallpaperSource)
+                if (root.operationError === "")
+                    root.operationError = "Theme operation failed (exit " + exitCode + ")"
+            }
+            root.operationKind = ""
+            root.operationPayload = ({})
+        }
+    }
+
+    function startOperation(arguments, kind, closeAfter, payload) {
+        if (root.operationInProgress)
+            return false
+        root.operationInProgress = true
+        root.operationStatus = "Applying…"
+        root.operationError = ""
+        root.operationOutput = ""
+        root.operationKind = kind
+        root.operationPayload = payload || ({})
+        themeApplyProcess.command = ["python", root.controller].concat(arguments)
+        themeApplyProcess.running = true
+        if (closeAfter)
+            root.closeMenu()
+        return true
+    }
+
+    function themeIndex(themeId) {
+        for (let index = 0; index < availableThemes.length; ++index) {
+            if (availableThemes[index].id === themeId)
+                return index
+        }
+        return -1
+    }
+
+    function applyTheme(themeId) {
+        if (!themeId || themeIndex(themeId) < 0 || root.operationInProgress)
+            return false
+        return root.startOperation(["--theme", themeId, "--no-main-reload"], "theme", true)
+    }
+
     function applyChanges() {
-        Quickshell.execDetached(["python", root.controller, "--source", root.pendingSource,
+        root.startOperation(["--source", root.pendingSource,
             "--bars", root.barsEnabled ? "1" : "0",
             "--wallpaper", root.wallpaperEnabled ? "1" : "0",
-            "--avatar", root.avatarEnabled ? "1" : "0"])
+            "--avatar", root.avatarEnabled ? "1" : "0"], "custom", false)
+    }
+
+    function applyGlobalWallpaper(sourceFile, statePath) {
+        root.startOperation(["--source", sourceFile,
+            "--bars", root.barsEnabled ? "1" : "0",
+            "--wallpaper", root.wallpaperEnabled ? "1" : "0",
+            "--avatar", root.avatarEnabled ? "1" : "0"], "custom", false,
+            {type: "global", source: sourceFile, path: statePath})
     }
 
     function screenWallpaperSource(screenName) {
@@ -130,12 +251,13 @@ PanelWindow {
         return expanded.startsWith("file://") ? expanded : "file://" + expanded
     }
 
-    function applyScreenWallpaper(screenName, sourceFile) {
-        Quickshell.execDetached(["python", root.controller, "--screen", screenName,
+    function applyScreenWallpaper(screenName, sourceFile, statePath) {
+        root.startOperation(["--screen", screenName,
             "--screen-wallpaper", sourceFile,
             "--bars", root.barsEnabled ? "1" : "0",
             "--wallpaper", root.wallpaperEnabled ? "1" : "0",
-            "--avatar", root.avatarEnabled ? "1" : "0"])
+            "--avatar", root.avatarEnabled ? "1" : "0"], "custom", false,
+            {type: "screen", screen: screenName, path: statePath})
     }
 
     function isLargestScreen() {
@@ -158,8 +280,8 @@ PanelWindow {
         width: 4
         height: 28
         radius: 2
-        color: hover.containsMouse || root.menuOpen ? "#70bfe8ff" : "transparent"
-        border.color: hover.containsMouse || root.menuOpen ? "#587fa8bb" : "transparent"
+        color: hover.containsMouse || root.menuOpen ? ShellTheme.color("#70bfe8ff") : "transparent"
+        border.color: hover.containsMouse || root.menuOpen ? ShellTheme.color("#587fa8bb") : "transparent"
         border.width: 1
 
         MouseArea {
@@ -178,6 +300,7 @@ PanelWindow {
             required property var lifecycleOwner
             property bool lifecycleClosing: false
             function prepareClose() { root.closePicker(); return true }
+            function showThemeChoices() { themeSelector.popup.open() }
             Component.onDestruction: lifecycleOwner.disposed()
             onClosed: if (!lifecycleClosing) root.closeMenu()
             title: "HK-47 Theme Control"
@@ -190,8 +313,8 @@ PanelWindow {
             Rectangle {
                 anchors.fill: parent
                 radius: 10
-                color: "#f01a2028"
-                border.color: "#668faabd"
+                color: ShellTheme.color("#f01a2028")
+                border.color: ShellTheme.color("#668faabd")
                 border.width: 1
 
                 Column {
@@ -203,17 +326,109 @@ PanelWindow {
                     Row {
                         width: parent.width
                         height: 28
-                        Text { width: parent.width; text: "HK-47  Theme Control"; color: "#bfeaff"; font.bold: true; font.pixelSize: 15 }
+                        Text { width: parent.width; text: "HK-47  Theme Control"; color: ShellTheme.color("#bfeaff"); font.bold: true; font.pixelSize: 15 }
                     }
 
-                    Text { text: "Theme"; color: "#8da7b7"; font.pixelSize: 11 }
+                    Text { text: "Theme"; color: ShellTheme.color("#8da7b7"); font.pixelSize: 11 }
+                    ComboBox {
+                        id: themeSelector
+                        width: parent.width
+                        height: 34
+                        model: root.availableThemes
+                        textRole: "name"
+                        currentIndex: Math.max(0, root.themeIndex(root.pendingTheme))
+                        enabled: root.availableThemes.length > 0 && !root.operationInProgress
+                        onActivated: function(index) {
+                            if (index >= 0 && index < root.availableThemes.length)
+                                root.pendingTheme = root.availableThemes[index].id
+                        }
+                        background: Rectangle {
+                            radius: 5
+                            color: themeSelector.hovered ? ShellTheme.color("#304c5b") : ShellTheme.color("#263843")
+                            border.color: ShellTheme.color("#668faabd")
+                            border.width: 1
+                        }
+                        contentItem: Text {
+                            leftPadding: 10
+                            rightPadding: themeSelector.indicator.width + 10
+                            text: themeSelector.displayText
+                            color: ShellTheme.color("#e4f5ff")
+                            verticalAlignment: Text.AlignVCenter
+                            elide: Text.ElideRight
+                        }
+                        delegate: ItemDelegate {
+                            required property int index
+                            required property var modelData
+                            width: themeSelector.width
+                            height: 30
+                            highlighted: themeSelector.highlightedIndex === index
+                            background: Rectangle {
+                                color: parent.highlighted ? ShellTheme.color("#304c5b") : ShellTheme.color("#182a34")
+                            }
+                            contentItem: Text {
+                                text: modelData.name
+                                color: ShellTheme.color("#e4f5ff")
+                                leftPadding: 8
+                                verticalAlignment: Text.AlignVCenter
+                                elide: Text.ElideRight
+                            }
+                        }
+                        popup: Popup {
+                            id: themePopup
+                            y: themeSelector.height - 1
+                            width: themeSelector.width
+                            implicitHeight: Math.min(contentItem.implicitHeight + 2, 180)
+                            padding: 1
+                            modal: false
+                            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
+                            contentItem: ListView {
+                                clip: true
+                                implicitHeight: contentHeight
+                                model: themePopup.visible ? themeSelector.delegateModel : null
+                                currentIndex: themeSelector.highlightedIndex
+                                ScrollIndicator.vertical: ScrollIndicator {}
+                            }
+                            background: Rectangle {
+                                color: ShellTheme.color("#101820")
+                                border.color: ShellTheme.color("#668faabd")
+                                border.width: 1
+                                radius: 5
+                            }
+                        }
+                    }
+                    Button {
+                        id: applyThemeButton
+                        width: parent.width
+                        height: 30
+                        text: "Apply theme"
+                        enabled: !root.operationInProgress && root.themeIndex(root.pendingTheme) >= 0 && root.pendingTheme !== State.selectedTheme
+                        onClicked: root.applyTheme(root.pendingTheme)
+                        background: Rectangle {
+                            radius: 5
+                            color: applyThemeButton.enabled
+                                ? (applyThemeButton.hovered ? ShellTheme.color("#3b88a3") : ShellTheme.color("#245a6d"))
+                                : ShellTheme.color("#172a34")
+                            border.color: applyThemeButton.enabled ? ShellTheme.color("#62b9d6") : ShellTheme.color("#31505e")
+                            border.width: 1
+                        }
+                        contentItem: Text {
+                            text: applyThemeButton.text
+                            color: applyThemeButton.enabled ? ShellTheme.color("#d8f5ff") : ShellTheme.color("#607783")
+                            font.bold: true
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
                     Rectangle {
                         width: parent.width; height: 34; radius: 5
-                        color: "#263843"
-                        Text { anchors.left: parent.left; anchors.leftMargin: 10; anchors.verticalCenter: parent.verticalCenter; text: "Current theme: HK-47 Reactive"; color: "#e4f5ff" }
+                        color: ShellTheme.color("#263843")
+                        Text { anchors.left: parent.left; anchors.leftMargin: 10; anchors.verticalCenter: parent.verticalCenter; text: "Current theme: " + State.selectedTheme; color: ShellTheme.color("#e4f5ff") }
                     }
+                    Text { visible: root.themeLoadError !== ""; text: root.themeLoadError; color: ShellTheme.color("#ffb4b4"); font.pixelSize: 11 }
+                    Text { visible: root.operationStatus !== ""; text: root.operationStatus; color: ShellTheme.color("#9be9a8"); font.pixelSize: 11 }
+                    Text { visible: root.operationError !== ""; text: root.operationError; color: ShellTheme.color("#ffb4b4"); font.pixelSize: 11; wrapMode: Text.Wrap; width: parent.width }
 
-                    Text { text: "Per-display wallpapers"; color: "#8da7b7"; font.pixelSize: 11 }
+                    Text { text: "Per-display wallpapers"; color: ShellTheme.color("#8da7b7"); font.pixelSize: 11 }
                     Column {
                         width: parent.width
                         spacing: 5
@@ -224,8 +439,8 @@ PanelWindow {
                                 width: parent.width
                                 height: 70
                                 radius: 5
-                                color: displayHover.containsMouse ? "#304c5b" : "#202f38"
-                                border.color: "#496b7a"
+                                color: displayHover.containsMouse ? ShellTheme.color("#304c5b") : ShellTheme.color("#202f38")
+                                border.color: ShellTheme.color("#496b7a")
                                 border.width: 1
 
                                 Rectangle {
@@ -234,7 +449,7 @@ PanelWindow {
                                     width: 86
                                     height: 54
                                     radius: 4
-                                    color: "#10161b"
+                                    color: ShellTheme.color("#10161b")
                                     clip: true
                                     Image {
                                         id: displayPreviewImage
@@ -249,7 +464,7 @@ PanelWindow {
                                     Text {
                                         anchors.centerIn: parent
                                         text: "No preview"
-                                        color: "#78909c"
+                                        color: ShellTheme.color("#78909c")
                                         font.pixelSize: 10
                                         visible: displayPreviewImage.status !== Image.Ready
                                     }
@@ -261,13 +476,13 @@ PanelWindow {
                                     width: parent.width - 250
                                     Text {
                                         text: modelData.name || "Unnamed display"
-                                        color: "#e4f5ff"
+                                        color: ShellTheme.color("#e4f5ff")
                                         font.bold: true
                                         elide: Text.ElideRight
                                     }
                                     Text {
                                         text: Math.round(modelData.width) + " × " + Math.round(modelData.height)
-                                        color: "#8fa8b4"
+                                        color: ShellTheme.color("#8fa8b4")
                                         font.pixelSize: 10
                                     }
                                 }
@@ -278,8 +493,8 @@ PanelWindow {
                                     width: 125
                                     height: 28
                                     radius: 4
-                                    color: chooseDisplayHover.containsMouse ? "#426b80" : "#315364"
-                                    Text { anchors.centerIn: parent; text: "Choose wallpaper…"; color: "#e8f7ff"; font.pixelSize: 11 }
+                                    color: chooseDisplayHover.containsMouse ? ShellTheme.color("#426b80") : ShellTheme.color("#315364")
+                                    Text { anchors.centerIn: parent; text: "Choose wallpaper…"; color: ShellTheme.color("#e8f7ff"); font.pixelSize: 11 }
                                     MouseArea {
                                         id: chooseDisplayHover
                                         anchors.fill: parent
@@ -298,10 +513,10 @@ PanelWindow {
                         }
                     }
 
-                    Text { text: "Effects"; color: "#8da7b7"; font.pixelSize: 11 }
-                    CheckRow { label: "Spectrum bars"; checked: root.barsEnabled; onClicked: { root.barsEnabled = !root.barsEnabled; root.applyChanges() } }
-                    CheckRow { label: "Wallpaper reaction"; checked: root.wallpaperEnabled; onClicked: { root.wallpaperEnabled = !root.wallpaperEnabled; root.applyChanges() } }
-                    CheckRow { label: "HK-47 avatar popup"; checked: root.avatarEnabled; onClicked: { root.avatarEnabled = !root.avatarEnabled; root.applyChanges() } }
+                    Text { text: "Effects"; color: ShellTheme.color("#8da7b7"); font.pixelSize: 11 }
+                    CheckRow { label: "Spectrum bars"; enabled: !root.operationInProgress; checked: root.barsEnabled; onClicked: { root.barsEnabled = !root.barsEnabled; root.applyChanges() } }
+                    CheckRow { label: "Wallpaper reaction"; enabled: !root.operationInProgress; checked: root.wallpaperEnabled; onClicked: { root.wallpaperEnabled = !root.wallpaperEnabled; root.applyChanges() } }
+                    CheckRow { label: "HK-47 avatar popup"; enabled: !root.operationInProgress; checked: root.avatarEnabled; onClicked: { root.avatarEnabled = !root.avatarEnabled; root.applyChanges() } }
 
                 }
             }
@@ -316,10 +531,10 @@ PanelWindow {
         width: parent.width
         height: 24
         color: "transparent"
-        Rectangle { width: 16; height: 16; radius: 3; anchors.verticalCenter: parent.verticalCenter; color: row.checked ? "#61a9c8" : "#17242c"; border.color: "#6f9bab"; border.width: 1
-            Text { anchors.centerIn: parent; text: "✓"; color: "#0b1720"; visible: row.checked; font.bold: true }
+        Rectangle { width: 16; height: 16; radius: 3; anchors.verticalCenter: parent.verticalCenter; color: row.checked ? ShellTheme.color("#61a9c8") : ShellTheme.color("#17242c"); border.color: ShellTheme.color("#6f9bab"); border.width: 1
+            Text { anchors.centerIn: parent; text: "✓"; color: ShellTheme.color("#0b1720"); visible: row.checked; font.bold: true }
         }
-        Text { anchors.left: parent.left; anchors.leftMargin: 25; anchors.verticalCenter: parent.verticalCenter; text: row.label; color: "#d6e3e8" }
+        Text { anchors.left: parent.left; anchors.leftMargin: 25; anchors.verticalCenter: parent.verticalCenter; text: row.label; color: ShellTheme.color("#d6e3e8") }
         MouseArea { anchors.fill: parent; onClicked: row.clicked(); cursorShape: Qt.PointingHandCursor }
     }
 
@@ -356,9 +571,9 @@ PanelWindow {
             Rectangle {
                 anchors.fill: parent
                 radius: 10
-                color: "#101820"
+                color: ShellTheme.color("#101820")
                 border.width: 1
-                border.color: "#62b9d6"
+                border.color: ShellTheme.color("#62b9d6")
             }
 
             Column {
@@ -372,7 +587,7 @@ PanelWindow {
                     Text {
                         width: parent.width
                         text: "CHOOSE WALLPAPER  //  " + root.pickerScreenName
-                        color: "#bcecff"
+                        color: ShellTheme.color("#bcecff")
                         font.bold: true
                         font.pixelSize: 14
                         elide: Text.ElideRight
@@ -383,7 +598,7 @@ PanelWindow {
                 Text {
                     width: parent.width
                     text: String(folderModel.folder).replace("file://", "")
-                    color: "#87a8b8"
+                    color: ShellTheme.color("#87a8b8")
                     font.pixelSize: 11
                     elide: Text.ElideMiddle
                 }
@@ -396,13 +611,13 @@ PanelWindow {
                     onClicked: folderModel.folder = folderModel.parentFolder
                     background: Rectangle {
                         radius: 5
-                        color: parent.enabled ? (parent.down ? "#183e4c" : parent.hovered ? "#3b88a3" : "#245a6d") : "#172a34"
+                        color: parent.enabled ? (parent.down ? ShellTheme.color("#183e4c") : parent.hovered ? ShellTheme.color("#3b88a3") : ShellTheme.color("#245a6d")) : ShellTheme.color("#172a34")
                         border.width: 1
-                        border.color: parent.enabled ? "#4e9bb5" : "#31505e"
+                        border.color: parent.enabled ? ShellTheme.color("#4e9bb5") : ShellTheme.color("#31505e")
                     }
                     contentItem: Text {
                         text: parent.text
-                        color: parent.enabled ? "#d8f5ff" : "#607783"
+                        color: parent.enabled ? ShellTheme.color("#d8f5ff") : ShellTheme.color("#607783")
                         font.pixelSize: 11
                         horizontalAlignment: Text.AlignLeft
                         verticalAlignment: Text.AlignVCenter
@@ -425,14 +640,14 @@ PanelWindow {
                         width: fileList.width
                         height: 34
                         radius: 5
-                        color: fileMouse.containsMouse || String(picker.selectedFile) === String(fileUrl) ? "#24485a" : "#182a34"
+                        color: fileMouse.containsMouse || String(picker.selectedFile) === String(fileUrl) ? ShellTheme.color("#24485a") : ShellTheme.color("#182a34")
                         border.width: 1
-                        border.color: fileMouse.containsMouse || String(picker.selectedFile) === String(fileUrl) ? "#62b9d6" : "#31505e"
+                        border.color: fileMouse.containsMouse || String(picker.selectedFile) === String(fileUrl) ? ShellTheme.color("#62b9d6") : ShellTheme.color("#31505e")
                         Text {
                             anchors.fill: parent
                             anchors.leftMargin: 12
                             text: (fileIsDir ? "▸  " : "▣  ") + fileName
-                            color: "#d8f5ff"
+                            color: ShellTheme.color("#d8f5ff")
                             font.pixelSize: 12
                             verticalAlignment: Text.AlignVCenter
                             elide: Text.ElideRight
@@ -456,20 +671,20 @@ PanelWindow {
                         width: (parent.width - parent.spacing) / 2
                         height: 34
                         text: "CHOOSE WALLPAPER"
-                        enabled: String(picker.selectedFile) !== ""
+                        enabled: !root.operationInProgress && String(picker.selectedFile) !== ""
                         onClicked: {
                             root.acceptArtwork(picker.selectedFile)
                             picker.visible = false
                         }
                         background: Rectangle {
                             radius: 5
-                            color: parent.enabled ? (parent.down ? "#183e4c" : parent.hovered ? "#3b88a3" : "#245a6d") : "#172a34"
+                            color: parent.enabled ? (parent.down ? ShellTheme.color("#183e4c") : parent.hovered ? ShellTheme.color("#3b88a3") : ShellTheme.color("#245a6d")) : ShellTheme.color("#172a34")
                             border.width: 1
-                            border.color: parent.enabled ? "#62b9d6" : "#31505e"
+                            border.color: parent.enabled ? ShellTheme.color("#62b9d6") : ShellTheme.color("#31505e")
                         }
                         contentItem: Text {
                             text: parent.text
-                            color: parent.enabled ? "#d8f5ff" : "#607783"
+                            color: parent.enabled ? ShellTheme.color("#d8f5ff") : ShellTheme.color("#607783")
                             font.bold: true
                             font.pixelSize: 11
                             horizontalAlignment: Text.AlignHCenter
@@ -483,13 +698,13 @@ PanelWindow {
                         onClicked: picker.visible = false
                         background: Rectangle {
                             radius: 5
-                            color: parent.down ? "#183e4c" : parent.hovered ? "#24485a" : "#172a34"
+                            color: parent.down ? ShellTheme.color("#183e4c") : parent.hovered ? ShellTheme.color("#24485a") : ShellTheme.color("#172a34")
                             border.width: 1
-                            border.color: "#4e7788"
+                            border.color: ShellTheme.color("#4e7788")
                         }
                         contentItem: Text {
                             text: parent.text
-                            color: "#a9c4cf"
+                            color: ShellTheme.color("#a9c4cf")
                             font.pixelSize: 11
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter

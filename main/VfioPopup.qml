@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "ShellTheme.js" as ShellTheme
 
 LifecyclePopup {
     id: vfioPopup
@@ -147,8 +148,8 @@ LifecyclePopup {
     Rectangle {
         anchors.fill: parent
         radius: 10
-        color: "#f21d2026"
-        border.color: "#59616d"
+        color: ShellTheme.color("#f21d2026")
+        border.color: ShellTheme.color("#59616d")
         border.width: 1
 
         Column {
@@ -158,17 +159,17 @@ LifecyclePopup {
 
             Text {
                 text: "󰢮  RTX 2080 Assignment"
-                color: "#e8edf5"
+                color: ShellTheme.color("#e8edf5")
                 font.family: "Symbols Nerd Font"
                 font.pixelSize: 17
                 font.bold: true
             }
 
-            Rectangle { width: parent.width; height: 1; color: "#4b5360" }
+            Rectangle { width: parent.width; height: 1; color: ShellTheme.color("#4b5360") }
 
             Text {
                 text: "Start/Stop"
-                color: "#8fb8ff"
+                color: ShellTheme.color("#8fb8ff")
                 font.pixelSize: 13
                 font.bold: true
             }
@@ -182,13 +183,13 @@ LifecyclePopup {
                     height: 44
                     radius: 6
                     opacity: vfioPopup.startEnabled ? 1.0 : 0.38
-                    color: vfioPopup.startEnabled && startMouse.containsMouse ? "#315b42" : "#263a31"
-                    border.color: vfioPopup.startEnabled ? "#69c486" : "#59616d"
+                    color: vfioPopup.startEnabled && startMouse.containsMouse ? ShellTheme.color("#315b42") : ShellTheme.color("#263a31")
+                    border.color: vfioPopup.startEnabled ? ShellTheme.color("#69c486") : ShellTheme.color("#59616d")
 
                     Text {
                         anchors.centerIn: parent
                         text: "▶  Start VM"
-                        color: vfioPopup.startEnabled ? "#b8f5c8" : "#8a9099"
+                        color: vfioPopup.startEnabled ? ShellTheme.color("#b8f5c8") : ShellTheme.color("#8a9099")
                         font.pixelSize: 14
                         font.bold: true
                     }
@@ -208,13 +209,13 @@ LifecyclePopup {
                     height: 44
                     radius: 6
                     opacity: vfioPopup.stopEnabled ? 1.0 : 0.38
-                    color: vfioPopup.stopEnabled && stopMouse.containsMouse ? "#66383b" : "#402b2e"
-                    border.color: vfioPopup.stopEnabled ? "#df777d" : "#59616d"
+                    color: vfioPopup.stopEnabled && stopMouse.containsMouse ? ShellTheme.color("#66383b") : ShellTheme.color("#402b2e")
+                    border.color: vfioPopup.stopEnabled ? ShellTheme.color("#df777d") : ShellTheme.color("#59616d")
 
                     Text {
                         anchors.centerIn: parent
                         text: "■  Stop VM"
-                        color: vfioPopup.stopEnabled ? "#ffc0c4" : "#8a9099"
+                        color: vfioPopup.stopEnabled ? ShellTheme.color("#ffc0c4") : ShellTheme.color("#8a9099")
                         font.pixelSize: 14
                         font.bold: true
                     }
@@ -232,7 +233,7 @@ LifecyclePopup {
 
             Text {
                 text: "Diagnostics"
-                color: "#8fb8ff"
+                color: ShellTheme.color("#8fb8ff")
                 font.pixelSize: 13
                 font.bold: true
                 topPadding: 4
@@ -242,19 +243,19 @@ LifecyclePopup {
                 width: parent.width
                 height: 130
                 radius: 6
-                color: "#aa15181d"
-                border.color: "#3f4650"
+                color: ShellTheme.color("#aa15181d")
+                border.color: ShellTheme.color("#3f4650")
 
                 Column {
                     anchors.fill: parent
                     anchors.margins: 11
                     spacing: 6
 
-                    Text { text: "Mode:  " + vfioPopup.modeText; color: vfioPopup.vfioMode ? "#d7bdff" : "#9be9a8"; font.pixelSize: 13; font.bold: true }
-                    Text { text: "Driver:  " + vfioPopup.driverText; color: "#d8dde6"; font.pixelSize: 12 }
-                    Text { text: "VM:  " + vfioPopup.vmText; color: "#d8dde6"; font.pixelSize: 12 }
-                    Text { text: "NVIDIA:  " + vfioPopup.nvidiaText; color: "#d8dde6"; font.pixelSize: 12; elide: Text.ElideRight; width: parent.width }
-                    Text { text: "Visible holders:  " + vfioPopup.holdersText; color: "#d8dde6"; font.pixelSize: 12 }
+                    Text { text: "Mode:  " + vfioPopup.modeText; color: vfioPopup.vfioMode ? ShellTheme.color("#d7bdff") : ShellTheme.color("#9be9a8"); font.pixelSize: 13; font.bold: true }
+                    Text { text: "Driver:  " + vfioPopup.driverText; color: ShellTheme.color("#d8dde6"); font.pixelSize: 12 }
+                    Text { text: "VM:  " + vfioPopup.vmText; color: ShellTheme.color("#d8dde6"); font.pixelSize: 12 }
+                    Text { text: "NVIDIA:  " + vfioPopup.nvidiaText; color: ShellTheme.color("#d8dde6"); font.pixelSize: 12; elide: Text.ElideRight; width: parent.width }
+                    Text { text: "Visible holders:  " + vfioPopup.holdersText; color: ShellTheme.color("#d8dde6"); font.pixelSize: 12 }
                 }
             }
 
@@ -266,9 +267,9 @@ LifecyclePopup {
                     width: (parent.width - 10) / 2
                     height: 38
                     radius: 5
-                    color: refreshMouse.containsMouse ? "#39424e" : "#2b323b"
-                    border.color: "#59616d"
-                    Text { anchors.centerIn: parent; text: "↻  Refresh"; color: "#e0e5ec"; font.pixelSize: 13 }
+                    color: refreshMouse.containsMouse ? ShellTheme.color("#39424e") : ShellTheme.color("#2b323b")
+                    border.color: ShellTheme.color("#59616d")
+                    Text { anchors.centerIn: parent; text: "↻  Refresh"; color: ShellTheme.color("#e0e5ec"); font.pixelSize: 13 }
                     MouseArea {
                         id: refreshMouse
                         anchors.fill: parent
@@ -283,9 +284,9 @@ LifecyclePopup {
                     width: (parent.width - 10) / 2
                     height: 38
                     radius: 5
-                    color: diagnosticsMouse.containsMouse ? "#39424e" : "#2b323b"
-                    border.color: "#59616d"
-                    Text { anchors.centerIn: parent; text: "󰒓  Full diagnostics"; color: "#e0e5ec"; font.family: "Symbols Nerd Font"; font.pixelSize: 13 }
+                    color: diagnosticsMouse.containsMouse ? ShellTheme.color("#39424e") : ShellTheme.color("#2b323b")
+                    border.color: ShellTheme.color("#59616d")
+                    Text { anchors.centerIn: parent; text: "󰒓  Full diagnostics"; color: ShellTheme.color("#e0e5ec"); font.family: "Symbols Nerd Font"; font.pixelSize: 13 }
                     MouseArea {
                         id: diagnosticsMouse
                         anchors.fill: parent
@@ -299,7 +300,7 @@ LifecyclePopup {
 
             Text {
                 text: vfioPopup.actionRunning ? "Operation output · running" : "Operation output"
-                color: vfioPopup.actionRunning ? "#ffd37d" : (vfioPopup.actionSucceeded ? "#8fb8ff" : "#ff9098")
+                color: vfioPopup.actionRunning ? ShellTheme.color("#ffd37d") : (vfioPopup.actionSucceeded ? ShellTheme.color("#8fb8ff") : ShellTheme.color("#ff9098"))
                 font.pixelSize: 13
                 font.bold: true
             }
@@ -308,8 +309,8 @@ LifecyclePopup {
                 width: parent.width
                 height: 104
                 radius: 6
-                color: "#cc101318"
-                border.color: vfioPopup.actionRunning ? "#92713b" : (vfioPopup.actionSucceeded ? "#3f4650" : "#8f454b")
+                color: ShellTheme.color("#cc101318")
+                border.color: vfioPopup.actionRunning ? ShellTheme.color("#92713b") : (vfioPopup.actionSucceeded ? ShellTheme.color("#3f4650") : ShellTheme.color("#8f454b"))
                 clip: true
 
                 Flickable {
@@ -324,7 +325,7 @@ LifecyclePopup {
                         id: outputText
                         width: parent.width
                         text: vfioPopup.actionMessage
-                        color: vfioPopup.actionRunning ? "#ffdca0" : (vfioPopup.actionSucceeded ? "#cfd6df" : "#ffb0b5")
+                        color: vfioPopup.actionRunning ? ShellTheme.color("#ffdca0") : (vfioPopup.actionSucceeded ? ShellTheme.color("#cfd6df") : ShellTheme.color("#ffb0b5"))
                         font.family: "monospace"
                         font.pixelSize: 11
                         wrapMode: Text.Wrap
@@ -335,7 +336,7 @@ LifecyclePopup {
             Text {
                 width: parent.width
                 text: vfioPopup.actionRunning ? vfioPopup.actionName : (vfioPopup.vfioMode ? "RTX is assigned away from Arch." : "RTX is available to Arch compute workloads.")
-                color: "#8d949e"
+                color: ShellTheme.color("#8d949e")
                 font.pixelSize: 11
                 horizontalAlignment: Text.AlignHCenter
             }

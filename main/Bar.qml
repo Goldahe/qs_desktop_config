@@ -5,6 +5,7 @@ import Quickshell.Io
 import Quickshell.Services.Pipewire
 
 import Quickshell.Bluetooth
+import "ShellTheme.js" as ShellTheme
 
 PanelWindow {
     id: bar
@@ -25,7 +26,7 @@ PanelWindow {
     readonly property string modeSwitchPath: Qt.resolvedUrl("mode-switch.sh").toString().replace("file://", "")
 
     implicitHeight: taskbarHeight
-    color: "#e6171717"
+    color: ShellTheme.color("#e6171717")
     exclusiveZone: implicitHeight
 
     SystemClock {
@@ -270,6 +271,18 @@ PanelWindow {
     IpcHandler {
         target: "lifecycle"
         function open(name: string): void { bar.openPopup(name, false) }
+        function themeChoices(): void {
+            const controller = bar.themeController()
+            if (controller) controller.openThemeChoices()
+        }
+        function themeApply(themeId: string): bool {
+            const controller = bar.themeController()
+            return controller ? controller.applyTheme(themeId) : false
+        }
+        function reloadTheme(): bool {
+            Quickshell.reload(true)
+            return true
+        }
         function close(name: string): void {
             if (name === "theme") { const controller = bar.themeController(); if (controller) controller.closeMenu(); return }
             if (name === "hardware" || name === "details") bar.pendingHardware = null
@@ -297,6 +310,7 @@ PanelWindow {
         }
         function state(): string {
             const out = {}
+            out.currentTheme = ShellTheme.selectedTheme
             for (const name of ["calendar", "power", "hardware", "details", "llm", "vfio", "wifi", "chatterbox"])
                 out[name] = bar.slotFor(name).snapshot()
             out.themeControllers = Array.from(themeControls.instances).map(c => ({visible: c.visible, screen: c.outputScreen ? c.outputScreen.name : "none"}))

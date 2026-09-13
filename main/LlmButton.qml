@@ -1,4 +1,5 @@
 import QtQuick
+import "ShellTheme.js" as ShellTheme
 
 Rectangle {
     id: llmButton
@@ -6,12 +7,12 @@ Rectangle {
     width: 30
     height: 28
     radius: 5
-    color: llmMouse.containsMouse ? "#454545" : "transparent"
+    color: llmMouse.containsMouse ? ShellTheme.color("#454545") : "transparent"
 
     Text {
         anchors.centerIn: parent
         text: "󰚩"
-        color: "white"
+        color: ShellTheme.color("#ffffff")
         font.family: "Symbols Nerd Font"
         font.pixelSize: 17
     }

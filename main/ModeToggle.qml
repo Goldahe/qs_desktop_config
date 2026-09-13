@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import "ShellTheme.js" as ShellTheme
 
 Rectangle {
     id: modeToggle
@@ -9,13 +10,13 @@ Rectangle {
     height: 28
     radius: 5
     color: modeMouse.containsMouse
-        ? (barWindow.gameMode ? "#59483a" : "#304f38")
+        ? (barWindow.gameMode ? ShellTheme.color("#59483a") : ShellTheme.color("#304f38"))
         : "transparent"
 
     Text {
         anchors.centerIn: parent
         text: barWindow.gameMode ? "󰊗" : "󰖷"
-        color: barWindow.gameMode ? "#ffd28a" : "#9be9a8"
+        color: barWindow.gameMode ? ShellTheme.color("#ffd28a") : ShellTheme.color("#9be9a8")
         font.family: "Symbols Nerd Font"
         font.pixelSize: 17
     }

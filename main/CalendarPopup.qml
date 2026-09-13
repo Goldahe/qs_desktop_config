@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import "ShellTheme.js" as ShellTheme
 
 LifecyclePopup {
     property var barWindow
@@ -40,8 +41,8 @@ LifecyclePopup {
     Rectangle {
         anchors.fill: parent
         radius: 8
-        color: "#f0262626"
-        border.color: "#555555"
+        color: ShellTheme.color("#f0262626")
+        border.color: ShellTheme.color("#555555")
         border.width: 1
 
         Column {
@@ -57,7 +58,7 @@ LifecyclePopup {
                     width: 32
                     height: parent.height
                     text: "‹"
-                    color: "white"
+                    color: ShellTheme.color("#ffffff")
                     font.pixelSize: 25
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
@@ -72,7 +73,7 @@ LifecyclePopup {
                     width: parent.width - 64
                     height: parent.height
                     text: Qt.formatDate(new Date(year, month, 1), "MMMM yyyy")
-                    color: "white"
+                    color: ShellTheme.color("#ffffff")
                     font.pixelSize: 15
                     font.bold: true
                     horizontalAlignment: Text.AlignHCenter
@@ -83,7 +84,7 @@ LifecyclePopup {
                     width: 32
                     height: parent.height
                     text: "›"
-                    color: "white"
+                    color: ShellTheme.color("#ffffff")
                     font.pixelSize: 25
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
@@ -106,7 +107,7 @@ LifecyclePopup {
                         width: parent.width / 7
                         height: parent.height
                         text: modelData
-                        color: "#858585"
+                        color: ShellTheme.color("#858585")
                         font.pixelSize: 12
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
@@ -136,12 +137,12 @@ LifecyclePopup {
                         width: (calendarGrid.width - 12) / 7
                         height: (calendarGrid.height - 10) / 6
                         radius: 4
-                        color: isToday ? "#536d9b" : "transparent"
+                        color: isToday ? ShellTheme.color("#536d9b") : "transparent"
 
                         Text {
                             anchors.fill: parent
                             text: parent.inMonth ? parent.dayNumber : ""
-                            color: parent.isToday ? "white" : "#d0d0d0"
+                            color: parent.isToday ? ShellTheme.color("#ffffff") : ShellTheme.color("#d0d0d0")
                             font.pixelSize: 13
                             font.bold: parent.isToday
                             horizontalAlignment: Text.AlignHCenter

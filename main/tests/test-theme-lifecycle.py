@@ -8,9 +8,13 @@ import tempfile
 
 source = Path(__file__).resolve().parent.parent
 with tempfile.TemporaryDirectory(prefix="qs-theme-lifecycle-") as directory:
-    target = Path(directory)
-    for name in ("ThemeControl.qml", "ThemeControlState.js", "LifecycleSlot.qml"):
+    config = Path(directory)
+    target = config / "main"
+    target.mkdir()
+    for name in ("ThemeControl.qml", "ThemeControlState.js", "ShellTheme.js",
+                 "LifecycleSlot.qml", "theme-control.py"):
         shutil.copy2(source / name, target / name)
+    shutil.copytree(source.parent / "themes", config / "themes")
     # Offscreen Qt has no layer-shell PanelWindow backend. Adapt ONLY the
     # persistent corner launcher in the temporary copy, never the menu/picker.
     theme = (target / "ThemeControl.qml").read_text()

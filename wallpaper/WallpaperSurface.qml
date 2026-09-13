@@ -12,7 +12,7 @@ PanelWindow {
     readonly property string homeDir: Quickshell.env("HOME") || ""
     function expandHome(path) {
         const value = String(path || "")
-        return value.indexOf("$HOME") === 0 ? homeDir + value.substring(5) : value
+        return value === "$HOME" || value.indexOf("$HOME/") === 0 ? homeDir + value.substring(5) : value
     }
     screen: outputScreen
     color: Theme.dimColor
