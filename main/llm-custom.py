@@ -68,6 +68,39 @@ BUILTIN_TEMPLATES = [
 KV_TYPES = ["f32", "f16", "bf16", "q8_0", "q4_0", "q4_1", "iq4_nl", "q5_0", "q5_1"]
 
 
+def server_binary():
+    return os.environ.get("LLAMA_SERVER_BIN", "/usr/bin/llama-server")
+
+
+def server_profiles():
+    profiles = []
+    cuda = os.environ.get("LLAMA_SERVER_CUDA_BIN")
+    rocm = os.environ.get("LLAMA_SERVER_ROCM_BIN")
+    if cuda:
+        profiles.append(("CUDA", cuda))
+    if rocm:
+        profiles.append(("ROCm", rocm))
+    return profiles or [("default", server_binary())]
+
+
+def server_binary_for_device(device=None):
+    if device:
+        prefix = str(device).split("0", 1)[0]
+        for name, path in server_profiles():
+            if name.lower() == prefix.lower():
+                return path
+    return server_binary()
+
+
+def fit_params_binary(device=None):
+    if device:
+        prefix = str(device).split("0", 1)[0]
+        key = "LLAMA_FIT_PARAMS_" + prefix.upper() + "_BIN"
+        if os.environ.get(key):
+            return os.environ[key]
+    return os.environ.get("LLAMA_FIT_PARAMS_BIN", "/usr/bin/llama-fit-params")
+
+
 def _read_exact(handle, size):
     data = handle.read(size)
     if len(data) != size:
@@ -213,16 +246,17 @@ def classify_model(metadata, filename):
 
 
 def discover_devices():
-    try:
-        result = subprocess.run([LLAMA_SERVER, "--list-devices"], text=True,
-                                capture_output=True, timeout=8, check=False)
-    except (OSError, subprocess.SubprocessError):
-        return []
     devices = []
-    for line in (result.stdout + "\n" + result.stderr).splitlines():
-        match = re.match(r"\s*([^:\s]+):\s+", line)
-        if match and match.group(1) != "Available":
-            devices.append(match.group(1))
+    for _, binary in server_profiles():
+        try:
+            result = subprocess.run([binary, "--list-devices"], text=True,
+                                    capture_output=True, timeout=8, check=False)
+        except (OSError, subprocess.SubprocessError):
+            continue
+        for line in (result.stdout + "\n" + result.stderr).splitlines():
+            match = re.match(r"\s*([^:\s]+):\s+", line)
+            if match and match.group(1) != "Available" and match.group(1) not in devices:
+                devices.append(match.group(1))
     return devices
 
 
@@ -548,7 +582,7 @@ def build_command(model, values, models_dir=DEFAULT_MODELS_DIR, devices=None):
     devices = discover_devices() if devices is None else list(devices)
     descriptors = {item["key"]: item for group in option_schema(caps, siblings, devices)
                    for item in group["options"]}
-    command = [LLAMA_SERVER, "--model", str(model)]
+    command = [server_binary_for_device(values.get("device")), "--model", str(model)]
     for key, raw_value in values.items():
         if key not in descriptors:
             raise ValueError(f"unsupported option: {key}")
@@ -654,7 +688,7 @@ def read_quick_profile(path):
 
 def _run_fit_estimate(model, values, root, devices):
     command = build_command(model, values, root, devices)
-    command[0] = LLAMA_FIT_PARAMS
+    command[0] = fit_params_binary(values.get("device"))
     command.extend(["--fit-print", "on"])
     result = subprocess.run(command, text=True, capture_output=True, timeout=45, check=False)
     if result.returncode != 0:
@@ -768,12 +802,30 @@ def main(argv=None):
         cmd.add_argument("model")
         cmd.add_argument("config", nargs="?", default="{}")
         cmd.add_argument("--models-dir", default=str(DEFAULT_MODELS_DIR))
+        cmd.add_argument("--server", default=None)
+        cmd.add_argument("--cuda-server", default=None)
+        cmd.add_argument("--rocm-server", default=None)
+        cmd.add_argument("--fit-params", default=None)
+        cmd.add_argument("--cuda-fit-params", default=None)
+        cmd.add_argument("--rocm-fit-params", default=None)
         cmd.add_argument("--devices", default=None,
                          help="comma-separated test override; normally discovered from llama-server")
         cmd.add_argument("--script", default=None,
                          help="trusted Quick Start profile to decode statically for estimation")
         cmd.add_argument("--request-id", default="")
     args = parser.parse_args(argv)
+    if args.server:
+        os.environ["LLAMA_SERVER_BIN"] = args.server
+    if args.cuda_server:
+        os.environ["LLAMA_SERVER_CUDA_BIN"] = args.cuda_server
+    if args.rocm_server:
+        os.environ["LLAMA_SERVER_ROCM_BIN"] = args.rocm_server
+    if args.fit_params:
+        os.environ["LLAMA_FIT_PARAMS_BIN"] = args.fit_params
+    if args.cuda_fit_params:
+        os.environ["LLAMA_FIT_PARAMS_CUDA_BIN"] = args.cuda_fit_params
+    if args.rocm_fit_params:
+        os.environ["LLAMA_FIT_PARAMS_ROCM_BIN"] = args.rocm_fit_params
     devices = None if args.devices is None else [x for x in args.devices.split(",") if x]
     try:
         if args.action == "inspect":

@@ -196,13 +196,31 @@ def test_live_shrine_profile_is_static_click_through_and_amd_launched() -> None:
     assert "WlrLayer.Overlay" in portrait
     assert "mask: Region {}" in portrait
     assert "ShaderEffect" not in portrait
-    assert "Timer {" not in portrait
+    assert "Timer {" in portrait
+    assert "implicitHeight: 384" in portrait
+    assert "* 0.8" in portrait
+    assert "bottom: portrait.taskbarHeight + 3" in portrait
+    assert "FireKeeper_idle.png" in portrait
+    assert "FireKeeper_open.png" in portrait
+    assert "FireKeeper_open_O.png" in portrait
+    assert "FireKeeper_open_more.png" in portrait
+    assert "mouthBand(value)" in portrait
+    assert "mouthOpenThreshold: 0.10" in portrait
+    assert "mouthOThreshold: 0.30" in portrait
+    assert "mouthMoreThreshold: 0.58" in portrait
+    registry = json.loads((profile.parent / "avatars/registry.json").read_text())
+    assert registry["avatars"]["shrine-maiden"]["requiredAssets"][-2:] == [
+        "$HOME/Avatar/FireKeeper_open_more.png",
+        "$HOME/Avatar/FireKeeper_open_O.png",
+    ]
+    assert "function setAmplitudeEnvelope" in portrait
     assert "function showAvatar()" in portrait
     assert "function hideAvatar()" in portrait
     assert 'target: "shrineMaidenAvatar"' in shell
     assert 'Quickshell.env("HOME")' in shell
     assert "function activate(): void" in shell
     assert "function deactivate(): void" in shell
+    assert "function setAmplitudeEnvelope(envelope: string)" in shell
     assert "MESA_VK_DEVICE_SELECT=1002:747e" in launcher
     assert 'CUDA_VISIBLE_DEVICES=""' in launcher
 

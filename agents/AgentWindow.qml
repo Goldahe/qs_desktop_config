@@ -147,7 +147,9 @@ FloatingWindow {
         if (!agent || !agent.command || !String(agent.command).trim())
             return
         const workingPath = overridePath(agent)
-        const command = "cd -- " + shellQuote(workingPath) + " && " + String(agent.command)
+        const inheritedPath = Quickshell.env("PATH") || ""
+        const launchPath = agentWindow.homeDir + "/.local/bin:" + inheritedPath
+        const command = "export PATH=" + shellQuote(launchPath) + " && cd -- " + shellQuote(workingPath) + " && " + String(agent.command)
         if (agent.terminal === false)
             Quickshell.execDetached(["sh", "-lc", command])
         else

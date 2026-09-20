@@ -5,6 +5,9 @@ import Quickshell.Io
 Scope {
     id: hardwarePopup
     property var coordinator
+    // The bar overview does not display process tables. Avoid paying for the
+    // expensive per-process GPU fdinfo walk until the detail surface needs it.
+    property bool detailed: false
     property bool stopping: false
     readonly property bool processActive: statsProcess.running
     property int samples: 0
@@ -380,7 +383,7 @@ Scope {
     }
     Process {
         id: statsProcess
-        command: ["python", Qt.resolvedUrl("poll-session.py").toString().replace("file://", ""), Qt.resolvedUrl("hardware-stats.sh").toString().replace("file://", "")]
+        command: ["python", Qt.resolvedUrl("poll-session.py").toString().replace("file://", ""), Qt.resolvedUrl("hardware-stats.sh").toString().replace("file://", ""), hardwarePopup.detailed ? "full" : "fast"]
         running: true
         stdout: StdioCollector {
             onStreamFinished: if (!hardwarePopup.stopping) { hardwarePopup.updateStats(this.text); hardwarePopup.samples++ }

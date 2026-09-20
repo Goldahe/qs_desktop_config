@@ -11,6 +11,15 @@ LifecyclePopup {
     property string selectedScript: scripts.length > 0 ? scripts[0] : ""
     property string selectedModel: models.length > 0 ? models[0] : ""
     property string launchUrl: "http://127.0.0.1:8080"
+    property string serverBinary: Quickshell.env("LLAMA_SERVER_BIN") || "/usr/bin/llama-server"
+    property string cudaServerBinary: Quickshell.env("LLAMA_SERVER_CUDA_BIN") ||
+                                      (llamaDirectory + "/src/llama.cpp/build-cuda/bin/llama-server")
+    property string rocmServerBinary: Quickshell.env("LLAMA_SERVER_ROCM_BIN") ||
+                                      (llamaDirectory + "/src/llama.cpp/build-rocm/bin/llama-server")
+    property string cudaFitBinary: Quickshell.env("LLAMA_FIT_PARAMS_CUDA_BIN") ||
+                                   (llamaDirectory + "/src/llama.cpp/build-cuda/bin/llama-fit-params")
+    property string rocmFitBinary: Quickshell.env("LLAMA_FIT_PARAMS_ROCM_BIN") ||
+                                   (llamaDirectory + "/src/llama.cpp/build-rocm/bin/llama-fit-params")
     property string scriptsText: ""
     property string modelsText: ""
     property var scripts: []
@@ -217,6 +226,14 @@ LifecyclePopup {
         return selectedModel ? modelsDirectory + "/" + selectedModel : ""
     }
 
+    function serverArguments() {
+        return ["--server", serverBinary,
+                "--cuda-server", cudaServerBinary,
+                "--rocm-server", rocmServerBinary,
+                "--cuda-fit-params", cudaFitBinary,
+                "--rocm-fit-params", rocmFitBinary]
+    }
+
     function refreshDiscovery() {
         if (modelListProcess.running) modelListProcess.running = false
         if (scriptListProcess.running) scriptListProcess.running = false
@@ -231,7 +248,7 @@ LifecyclePopup {
         if (inspectorProcess.running) inspectorProcess.running = false
         inspectionStatus = "Reading GGUF metadata..."
         const command = ["/usr/bin/python", helperPath, "inspect", modelPath(),
-                         "--models-dir", modelsDirectory]
+                         "--models-dir", modelsDirectory].concat(llmPopup.serverArguments())
         Qt.callLater(function() {
             inspectorProcess.command = command
             inspectorProcess.running = true
@@ -257,7 +274,7 @@ LifecyclePopup {
         const requestId = expectedEstimateRequest
         const command = ["/usr/bin/python", helperPath, "estimate", modelPath(),
                          selectedTab === 1 ? customValuesJson() : "{}",
-                         "--models-dir", modelsDirectory, "--request-id", requestId]
+                         "--models-dir", modelsDirectory, "--request-id", requestId].concat(llmPopup.serverArguments())
         if (selectedTab === 0) {
             if (!selectedScript) return
             command.push("--script", llamaDirectory + "/" + selectedScript)
@@ -369,7 +386,7 @@ LifecyclePopup {
     function startCustomLlama() {
         if (llamaProcess.running || !selectedModel || !modelInspection.model || !modelInspection.model.serverCompatible) return
         llamaProcess.command = ["/usr/bin/python", helperPath, "run", modelPath(),
-                                customValuesJson(), "--models-dir", modelsDirectory]
+                                customValuesJson(), "--models-dir", modelsDirectory].concat(llmPopup.serverArguments())
         runningMode = "Custom"
         processStatus = "Validating and starting custom configuration..."
         llamaProcess.running = true

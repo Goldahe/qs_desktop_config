@@ -28,6 +28,14 @@ ShellRoot {
         function isActive(): bool { return portrait.active }
         function activate(): void { portrait.showAvatar() }
         function deactivate(): void { portrait.hideAvatar() }
+        function setAmplitudeEnvelope(envelope: string): void {
+            portrait.setAmplitudeEnvelope(envelope)
+        }
+        function setAmplitude(amplitude: real): void {
+            portrait.setAmplitude(amplitude)
+        }
+        function mouthFrame(): int { return portrait.mouthFrame }
+        function mouthAsset(): string { return portrait.mouthAsset }
         function profileId(): string { return "shrine-maiden" }
     }
 }

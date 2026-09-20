@@ -200,7 +200,7 @@ LifecyclePopup {
                         hoverEnabled: true
                         enabled: vfioPopup.startEnabled
                         cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                        onClicked: vfioPopup.runAction("Starting win11-VFIO", [Quickshell.env("WIN11_VFIO_BIN") || "win11-vfio", "start"])
+                        onClicked: vfioPopup.runAction("Starting win11-VFIO", [Quickshell.env("WIN11_VFIO_BIN") || "/home/hawk/.local/bin/win11-vfio", "start"])
                     }
                 }
 
@@ -226,7 +226,7 @@ LifecyclePopup {
                         hoverEnabled: true
                         enabled: vfioPopup.stopEnabled
                         cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                        onClicked: vfioPopup.runAction("Stopping win11-VFIO", [Quickshell.env("WIN11_VFIO_BIN") || "win11-vfio", "stop"])
+                        onClicked: vfioPopup.runAction("Stopping win11-VFIO", [Quickshell.env("WIN11_VFIO_BIN") || "/home/hawk/.local/bin/win11-vfio", "stop"])
                     }
                 }
             }

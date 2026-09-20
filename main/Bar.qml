@@ -387,6 +387,7 @@ PanelWindow {
     function openHardware(pointer) {
         if (hardwareSession && hardwareSession.stopping && hardwareSession.processActive) { pendingHardware = {view: "hardware", pointer: pointer}; return }
         rememberPopup("hardware")
+        if (hardwareSession) hardwareSession.detailed = false
         if (ensureHardwareSession()) hardwareSlot.open({hardwareSource: hardwareSession, grabFocus: !!pointer})
     }
     function toggleHardware() {
@@ -396,6 +397,7 @@ PanelWindow {
     function openHardwareDetails() {
         if (hardwareSession && hardwareSession.stopping && hardwareSession.processActive) { pendingHardware = {view: "details"}; return }
         if (!ensureHardwareSession()) return
+        hardwareSession.detailed = true
         hardwareTransition = true
         rememberPopup("details")
         const details = detailsSlot.open({hardwareSource: hardwareSession})

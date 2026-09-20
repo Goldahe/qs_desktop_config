@@ -5,7 +5,8 @@
       "description": "The self-improving AI agent built by Nous Research.",
       "icon": "$HOME/Work/AI_Dev/Llama/hermes-agent.png",
       "command": "hermes",
-      "terminal": true
+      "terminal": true,
+      "path": "$HOME/Work/Guitar_Tutor"
     },
     {
       "name": "Codex - OpenAI",
@@ -13,7 +14,7 @@
       "icon": "$HOME/Work/AI_Dev/Llama/codex-color.png",
       "command": "codex",
       "terminal": true,
-      "path": "$HOME"
+      "path": "$HOME/Work/Guitar_Tutor"
     },
     {
       "name": "DeepSeek Harness",

@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+sampling_mode="${1:-full}"
+fast_mode=0
+[ "$sampling_mode" = "fast" ] && fast_mode=1
+
 # Emit one machine-readable GPU record for every DRM card.
 # Fields: GPU|index|PCI address|name|load|temperature|used|total|percent|power
 printf 'CPU_LOAD '
@@ -133,6 +137,11 @@ done
 # CUDA/graphics clients that do not hold a /dev/dri handle; fuser covers DRM.
 # Fields: GPU_PROC|gpu-index|pid|name|gpu-load|cpu|mem|user|rss|vsz|stat|elapsed|command|gpu-memory
 gpu_idx=0
+if [ "$fast_mode" -eq 1 ]; then
+    # The overview has no process table. Skipping this fdinfo/fuser walk keeps
+    # the one-shot sampler below the requested one-second refresh cadence.
+    gpu_idx="$idx"
+else
 declare -a nvidia_card_indices=()
 card_idx=0
 for card in /sys/class/drm/card[0-9]; do
@@ -244,6 +253,7 @@ for card in /sys/class/drm/card[0-9]; do
 done
 
 mv -f "$state_tmp" "$state_file"
+fi
 
 total_power='N/A'
 total_power_value=0
@@ -272,5 +282,7 @@ printf 'NVME_TEMP2 '; printf '%s\n' "$sensor_data" | awk '/^nvme-pci-/{n++; foun
 printf 'HDD '; lsblk -bndo SIZE,TYPE 2>/dev/null | awk '$2 == "disk" {sum += $1} END {if (sum > 0) print sum}'
 
 # Emit discovered block devices and active per-device I/O processes.
-script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-python3 "$script_dir/storage-stats.py"
+if [ "$fast_mode" -eq 0 ]; then
+    script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+    python3 "$script_dir/storage-stats.py"
+fi

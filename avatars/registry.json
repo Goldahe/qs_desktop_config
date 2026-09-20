@@ -21,7 +21,10 @@
       "requiredAssets": [
         "Portrait.qml",
         "shell.qml",
-        "assets/fire-keeper.png"
+        "$HOME/Avatar/FireKeeper_idle.png",
+        "$HOME/Avatar/FireKeeper_open.png",
+        "$HOME/Avatar/FireKeeper_open_more.png",
+        "$HOME/Avatar/FireKeeper_open_O.png"
       ]
     }
   }
